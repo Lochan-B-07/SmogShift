@@ -182,17 +182,15 @@ export function Header({
           <div className="flex flex-wrap items-center gap-2">
             {airQuality ? (
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium sm:text-xs ${
-                  airQuality.source.isFallback
-                    ? 'border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-200'
-                    : 'border-teal-200 bg-teal-50/70 text-teal-950 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-200'
-                }`}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium sm:text-xs ${airQuality.source.isFallback
+                  ? 'border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-200'
+                  : 'border-teal-200 bg-teal-50/70 text-teal-950 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-200'
+                  }`}
               >
                 <span
                   aria-hidden="true"
-                  className={`h-2 w-2 rounded-full ${
-                    airQuality.source.isFallback ? 'bg-amber-600' : 'bg-emerald-600'
-                  }`}
+                  className={`h-2 w-2 rounded-full ${airQuality.source.isFallback ? 'bg-amber-600' : 'bg-emerald-600'
+                    }`}
                 />
                 {airQuality.source.isFallback
                   ? `Offline snapshot from ${airQuality.source.snapshotDate ?? 'recent capture'}. Not live data.`
@@ -243,11 +241,10 @@ export function Header({
                   onSelectLocation(city);
                 }}
                 aria-pressed={active}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 ${
-                  active
-                    ? 'bg-teal-800 text-white shadow-xs dark:bg-teal-600'
-                    : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
-                }`}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 ${active
+                  ? 'bg-teal-800 text-white shadow-xs dark:bg-teal-600'
+                  : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
+                  }`}
               >
                 {city.name}
               </button>
