@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, type ReactElement } from 'react';
+import { useCallback, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { ExposureChart } from '@/components/chart/ExposureChart';
 import { HourlyTable } from '@/components/chart/HourlyTable';
 import { CausalCard } from '@/components/controls/CausalCard';
+import { ImpactSummaryBar } from '@/components/controls/ImpactSummaryBar';
 import { MeterCards } from '@/components/controls/MeterCards';
 import { ToggleGroup } from '@/components/controls/ToggleGroup';
 import { AssumptionsModal } from '@/components/drawers/AssumptionsModal';
@@ -14,22 +15,193 @@ import { Header } from '@/components/layout/Header';
 import { VerdictBanner } from '@/components/layout/VerdictBanner';
 import { useAirQuality, type ActiveLocation } from '@/hooks/useAirQuality';
 import { useAnalyze } from '@/hooks/useAnalyze';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSimulation } from '@/hooks/useSimulation';
 import { useTheme } from '@/hooks/useTheme';
-import { DEFAULT_CITY, DEFAULT_PROFILE, DEFAULT_TOGGLES } from '@/lib/presets';
-import type { AnalyzeQuestion, HouseholdProfile, Toggles } from '@/shared/schemas';
+import { CITY_PRESETS, DEFAULT_CITY, DEFAULT_PROFILE, DEFAULT_TOGGLES } from '@/lib/presets';
+import {
+  TogglesSchema,
+  type AnalyzeQuestion,
+  type HouseholdProfile,
+  type Toggles,
+} from '@/shared/schemas';
+
+const subscribeNoop = (): (() => void) => () => {};
+
+function getUrlSearchSnapshot(): string {
+  return typeof window === 'undefined' ? '' : window.location.search;
+}
+
+function getServerSearchSnapshot(): string {
+  return '';
+}
+
+function parseUrlOverrides(search: string, base: Toggles): {
+  readonly cityKey: string | null;
+  readonly toggles: Toggles | null;
+} {
+  if (!search) return { cityKey: null, toggles: null };
+  const params = new URLSearchParams(search);
+  const cityKey = params.get('city');
+  const indoor = params.get('indoor');
+  const travel = params.get('travel');
+  const timing = params.get('timing');
+  const hh = params.get('hh');
+
+  if (!indoor && !travel && timing === null && !hh) {
+    return { cityKey, toggles: null };
+  }
+
+  const candidate = {
+    indoor: indoor ?? base.indoor,
+    travel: travel ?? base.travel,
+    smartTiming: timing !== null ? timing === '1' : base.smartTiming,
+    households: hh !== null ? Number(hh) : base.households,
+  };
+  const parsed = TogglesSchema.safeParse(candidate);
+  return { cityKey, toggles: parsed.success ? parsed.data : null };
+}
+
+function buildShareUrl(location: ActiveLocation, toggles: Toggles): string {
+  if (typeof window === 'undefined') return '';
+  const params = new URLSearchParams({
+    city: location.key,
+    indoor: toggles.indoor,
+    travel: toggles.travel,
+    timing: toggles.smartTiming ? '1' : '0',
+    hh: String(toggles.households),
+  });
+  return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+}
+
+function OnboardingCard(): ReactElement {
+  return (
+    <section
+      aria-label="Welcome to SmogShift"
+      className="rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50/80 via-white to-white p-5 shadow-sm dark:border-teal-900/70 dark:from-teal-950/40 dark:via-zinc-900 dark:to-zinc-900"
+    >
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden="true"
+          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-800 text-white dark:bg-teal-600"
+        >
+          <svg viewBox="0 0 20 20" className="h-4 w-4 fill-current">
+            <path d="M10 2a.75.75 0 0 1 .72.54l1.06 3.7 3.7 1.06a.75.75 0 0 1 0 1.44l-3.7 1.06-1.06 3.7a.75.75 0 0 1-1.44 0l-1.06-3.7-3.7-1.06a.75.75 0 0 1 0-1.44l3.7-1.06 1.06-3.7A.75.75 0 0 1 10 2Z" />
+          </svg>
+        </span>
+        <div>
+          <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+            Your personal air-quality simulator
+          </h2>
+          <p className="mt-1 text-xs text-zinc-700 dark:text-zinc-300">
+            SmogShift uses real forecast data to show how your daily choices — filter type, commute,
+            and timing — change your PM2.5 exposure. No sign-in needed.
+          </p>
+          <ol className="mt-3 space-y-2 text-xs text-zinc-700 dark:text-zinc-300">
+            <li className="flex items-start gap-2">
+              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-100 text-[11px] font-bold text-teal-900 dark:bg-teal-900/70 dark:text-teal-200">
+                1
+              </span>
+              <span>
+                <strong>Pick your city</strong> — or tap &ldquo;Use my location&rdquo; for live
+                coordinates.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-100 text-[11px] font-bold text-teal-900 dark:bg-teal-900/70 dark:text-teal-200">
+                2
+              </span>
+              <span>
+                <strong>Tune the what-if controls</strong> — indoor filter, commute mode, and smart
+                timing. Watch exposure drop in real time.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-100 text-[11px] font-bold text-teal-900 dark:bg-teal-900/70 dark:text-teal-200">
+                3
+              </span>
+              <span>
+                <strong>Ask the AI Advisor</strong> — get Gemini-powered causal explanations for
+                your household profile.
+              </span>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Home(): ReactElement {
   const { theme, toggleTheme } = useTheme();
-  const [location, setLocation] = useState<ActiveLocation>(DEFAULT_CITY);
-  const [profile, setProfile] = useState<HouseholdProfile>(DEFAULT_PROFILE);
-  const [toggles, setToggles] = useState<Toggles>(DEFAULT_TOGGLES);
-  const [question, setQuestion] = useState<AnalyzeQuestion>('overview');
 
+  const [locationKey, setLocationKey] = useLocalStorage<string>('smogshift_city', DEFAULT_CITY.key);
+  const [profile, setProfile] = useLocalStorage<HouseholdProfile>(
+    'smogshift_profile',
+    DEFAULT_PROFILE,
+  );
+  const [storedToggles, setStoredToggles] = useLocalStorage<Toggles>(
+    'smogshift_toggles',
+    DEFAULT_TOGGLES,
+  );
+  const [customLocation, setCustomLocation] = useState<ActiveLocation | null>(null);
+  const [urlOverridesDismissed, setUrlOverridesDismissed] = useState<boolean>(false);
+
+  const search = useSyncExternalStore(subscribeNoop, getUrlSearchSnapshot, getServerSearchSnapshot);
+  const urlOverrides = parseUrlOverrides(search, storedToggles);
+
+  const location: ActiveLocation =
+    customLocation ??
+    (urlOverrides.cityKey && !urlOverridesDismissed
+      ? CITY_PRESETS.find((c) => c.key === urlOverrides.cityKey)
+      : undefined) ??
+    CITY_PRESETS.find((c) => c.key === locationKey) ??
+    DEFAULT_CITY;
+
+  const toggles: Toggles =
+    urlOverrides.toggles && !urlOverridesDismissed ? urlOverrides.toggles : storedToggles;
+
+  const handleSelectLocation = useCallback(
+    (loc: ActiveLocation) => {
+      setUrlOverridesDismissed(true);
+      if (loc.key === 'geo' || !CITY_PRESETS.some((c) => c.key === loc.key)) {
+        setCustomLocation(loc);
+      } else {
+        setCustomLocation(null);
+        setLocationKey(loc.key);
+      }
+    },
+    [setLocationKey],
+  );
+
+  const handleTogglesChange = useCallback(
+    (next: Toggles) => {
+      setUrlOverridesDismissed(true);
+      setStoredToggles(next);
+    },
+    [setStoredToggles],
+  );
+
+  const [question, setQuestion] = useState<AnalyzeQuestion>('overview');
   const [profileOpen, setProfileOpen] = useState<boolean>(false);
   const [cadrOpen, setCadrOpen] = useState<boolean>(false);
   const [briefOpen, setBriefOpen] = useState<boolean>(false);
   const [assumptionsOpen, setAssumptionsOpen] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+
+  function handleCopyShareUrl(): void {
+    const url = buildShareUrl(location, toggles);
+    if (!url || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
+    navigator.clipboard.writeText(url).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => {
+        /* ignore clipboard rejection */
+      },
+    );
+  }
 
   const { data, loading, error, retry } = useAirQuality(location);
   const simulation = useSimulation(data, profile, toggles);
@@ -49,6 +221,8 @@ export default function Home(): ReactElement {
     engine: engineSummary,
   });
 
+  const hasData = Boolean(data && simulation && simulation.ok);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50/70 via-zinc-50 to-zinc-100 text-zinc-900 dark:from-teal-950/25 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-100">
       <a
@@ -64,24 +238,29 @@ export default function Home(): ReactElement {
         loading={loading}
         theme={theme}
         onToggleTheme={toggleTheme}
-        onSelectLocation={setLocation}
+        onSelectLocation={handleSelectLocation}
         onOpenProfile={() => setProfileOpen(true)}
         onOpenCadr={() => setCadrOpen(true)}
         onOpenBrief={() => setBriefOpen(true)}
+        onCopyShareUrl={handleCopyShareUrl}
+        shareCopied={copied}
       />
 
       <main id="main-content" className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6">
         {loading && !data ? (
-          <div
-            aria-live="polite"
-            className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-          >
-            <div className="h-4 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-            <div className="h-56 w-full animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />
-            <p className="text-xs text-zinc-700 dark:text-zinc-300">
-              Loading modeled 48-hour air quality forecast for {location.name}...
-            </p>
-          </div>
+          <>
+            <OnboardingCard />
+            <div
+              aria-live="polite"
+              className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            >
+              <div className="h-4 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+              <div className="h-56 w-full animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />
+              <p className="text-xs text-zinc-700 dark:text-zinc-300">
+                Loading modeled 48-hour air quality forecast for {location.name}...
+              </p>
+            </div>
+          </>
         ) : null}
 
         {error ? (
@@ -116,12 +295,15 @@ export default function Home(): ReactElement {
           </div>
         ) : null}
 
-        {data && simulation && simulation.ok ? (
+        {hasData && data && simulation && simulation.ok ? (
           <>
+            <ImpactSummaryBar summary={simulation.summary} toggles={toggles} />
+
             <VerdictBanner
               summary={simulation.summary}
               adjustedMean24={simulation.adjustedMeters.mean24}
               fingerprint={data.fingerprint}
+              onOpenAssumptions={() => setAssumptionsOpen(true)}
             />
 
             <ExposureChart
@@ -137,7 +319,8 @@ export default function Home(): ReactElement {
             <ToggleGroup
               toggles={toggles}
               bestHour={simulation.summary.bestHour}
-              onChange={setToggles}
+              summary={simulation.summary}
+              onChange={handleTogglesChange}
             />
 
             <MeterCards
@@ -145,7 +328,9 @@ export default function Home(): ReactElement {
               adjustedMean24={simulation.adjustedMeters.mean24}
               households={toggles.households}
               travel={toggles.travel}
-              onHouseholdsChange={(households) => setToggles((prev) => ({ ...prev, households }))}
+              onHouseholdsChange={(households) =>
+                handleTogglesChange({ ...toggles, households })
+              }
             />
 
             <CausalCard
@@ -182,13 +367,22 @@ export default function Home(): ReactElement {
 
       <footer className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 px-4 pb-8 pt-2 text-xs text-zinc-700 dark:text-zinc-400">
         <span>Air quality data by Open-Meteo.com (CC BY 4.0) · Not medical advice.</span>
-        <button
-          type="button"
-          onClick={() => setAssumptionsOpen(true)}
-          className="font-semibold text-teal-900 underline underline-offset-2 hover:text-teal-700 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
-        >
-          Assumptions &amp; methodology
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleCopyShareUrl}
+            className="font-semibold text-zinc-700 underline underline-offset-2 hover:text-zinc-900 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+          >
+            {copied ? '✓ Link copied' : 'Share this view'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setAssumptionsOpen(true)}
+            className="font-semibold text-teal-900 underline underline-offset-2 hover:text-teal-700 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
+          >
+            Assumptions &amp; methodology
+          </button>
+        </div>
       </footer>
 
       <AssumptionsModal open={assumptionsOpen} onOpenChange={setAssumptionsOpen} />

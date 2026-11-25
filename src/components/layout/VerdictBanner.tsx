@@ -9,6 +9,7 @@ export interface VerdictBannerProps {
   readonly summary: EngineSummary;
   readonly adjustedMean24: number;
   readonly fingerprint: Fingerprint;
+  readonly onOpenAssumptions: () => void;
 }
 
 function getBadgeStyle(band: CpcbBandKey): string {
@@ -64,6 +65,7 @@ export function VerdictBanner({
   summary,
   adjustedMean24,
   fingerprint,
+  onOpenAssumptions,
 }: VerdictBannerProps): ReactElement {
   const category = getCpcbPm25Category(adjustedMean24);
 
@@ -97,9 +99,16 @@ export function VerdictBanner({
             NO2: <strong className="capitalize">{fingerprint.no2Level}</strong>
           </span>
         </div>
-        <span className="text-zinc-600 dark:text-zinc-400">
-          Assumes non-commute hours are spent at home; workplace/school indoor air is not modeled.
-        </span>
+        <div className="flex flex-wrap items-center gap-3 text-zinc-600 dark:text-zinc-400">
+          <span>Non-commute hours modeled at home; workplace air not included.</span>
+          <button
+            type="button"
+            onClick={onOpenAssumptions}
+            className="font-semibold text-teal-800 underline underline-offset-2 hover:text-teal-600 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
+          >
+            See methodology →
+          </button>
+        </div>
       </div>
     </section>
   );

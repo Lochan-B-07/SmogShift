@@ -21,6 +21,8 @@ export interface HeaderProps {
   readonly onOpenProfile: () => void;
   readonly onOpenCadr: () => void;
   readonly onOpenBrief: () => void;
+  readonly onCopyShareUrl: () => void;
+  readonly shareCopied: boolean;
 }
 
 export function Header({
@@ -33,6 +35,8 @@ export function Header({
   onOpenProfile,
   onOpenCadr,
   onOpenBrief,
+  onCopyShareUrl,
+  shareCopied,
 }: HeaderProps): ReactElement {
   const [query, setQuery] = useState<string>('');
   const [results, setResults] = useState<readonly GeocodeResult[]>([]);
@@ -145,7 +149,7 @@ export function Header({
   }
 
   return (
-    <header className="border-b border-zinc-200/90 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/90">
+    <header className="sticky top-0 z-30 border-b border-zinc-200/90 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/90">
       <div className="mx-auto flex max-w-4xl flex-col gap-2.5 px-4 py-3 sm:py-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
@@ -198,6 +202,31 @@ export function Header({
               </span>
             ) : null}
 
+            {/* Share URL button */}
+            <button
+              type="button"
+              onClick={onCopyShareUrl}
+              aria-label={shareCopied ? 'Share link copied' : 'Copy share link for current settings'}
+              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+            >
+              {shareCopied ? (
+                <>
+                  <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3 w-3 fill-emerald-600">
+                    <path d="M13.5 2.5 6 10.5 2.5 7" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3 w-3 fill-current">
+                    <path d="M11 2a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-1.73-1H5.73A2 2 0 0 1 4 6a2 2 0 0 1-2-2 2 2 0 0 1 2-2 2 2 0 0 1 1.73 1h3.54A2 2 0 0 1 11 2Zm0 8a2 2 0 0 1 1.73 1h.27a1 1 0 0 1 0 2h-.27A2 2 0 0 1 11 14a2 2 0 0 1-2-2 2 2 0 0 1 .27-1H5.73A2 2 0 0 1 4 12a2 2 0 0 1-2-2 2 2 0 0 1 2-2 2 2 0 0 1 1.73 1h3.54A2 2 0 0 1 11 10Z" />
+                  </svg>
+                  <span>Share</span>
+                </>
+              )}
+            </button>
+
+            {/* Theme toggle */}
             <button
               type="button"
               onClick={onToggleTheme}
@@ -328,6 +357,7 @@ export function Header({
             <button
               type="button"
               onClick={onOpenProfile}
+              title="Edit household profile (sensitive group, room size, cooking type, commute)"
               className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 sm:px-3"
             >
               Profile
@@ -335,6 +365,7 @@ export function Header({
             <button
               type="button"
               onClick={onOpenCadr}
+              title="CADR / ACH calculator — find the right air purifier for your room"
               className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 sm:px-3"
             >
               CADR Check

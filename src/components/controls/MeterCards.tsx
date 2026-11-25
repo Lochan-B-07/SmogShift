@@ -2,7 +2,7 @@
 
 import * as Slider from '@radix-ui/react-slider';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { formatWhoPercent } from '@/lib/formatters';
 import type { EngineSummary, Toggles } from '@/shared/schemas';
 
@@ -34,12 +34,26 @@ export function MeterCards({
         )
       : 0;
 
+  // Flash the exposure tile when the adjusted value changes
+  const flashRef = useRef<HTMLDivElement | null>(null);
+  const prevAdjusted = useRef<number>(summary.adjustedPctWho);
+  const [flashKey, setFlashKey] = useState<number>(0);
+
+  useEffect(() => {
+    if (prevAdjusted.current !== summary.adjustedPctWho) {
+      prevAdjusted.current = summary.adjustedPctWho;
+      setFlashKey((k) => k + 1);
+    }
+  }, [summary.adjustedPctWho]);
+
   return (
     <Tooltip.Provider delayDuration={150}>
       <section aria-label="Exposure and community meters" className="grid gap-4 sm:grid-cols-2">
         <div
+          ref={flashRef}
+          key={flashKey}
           aria-live="polite"
-          className="flex flex-col justify-between rounded-2xl border border-zinc-200/90 bg-white/95 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95"
+          className={`flex flex-col justify-between rounded-2xl border border-zinc-200/90 bg-white/95 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95${flashKey > 0 ? ' meter-flash' : ''}`}
         >
           <div>
             <div className="flex flex-wrap items-center justify-between gap-2">
