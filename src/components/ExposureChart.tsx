@@ -36,19 +36,20 @@ export function ExposureChart({
 
   return (
     <section
-      aria-label={ariaSummary}
-      role="img"
+      aria-labelledby="exposure-chart-heading"
       className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs"
     >
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold text-zinc-900">
+        <h2 id="exposure-chart-heading" className="text-base font-semibold text-zinc-900">
           24-Hour Personal Exposure Curve
         </h2>
         <p className="text-xs text-zinc-600">
           Lines differ by dash pattern &amp; color · Shaded span = best window
         </p>
       </div>
-      <ExposureChartInner points={points} />
+      <div role="img" aria-label={ariaSummary}>
+        <ExposureChartInner points={points} />
+      </div>
     </section>
   );
 }

@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smog Simulator",
-  description: "Urban air-quality exposure budget & causal what-if simulator",
+  title: "SmogShift — Urban Air Quality What-If Simulator",
+  description:
+    "Mobile-first urban air-quality exposure budget & causal what-if simulator for Indian households.",
 };
 
 export default function RootLayout({

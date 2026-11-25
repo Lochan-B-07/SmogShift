@@ -42,6 +42,12 @@
 - What I had to correct (include real bugs/failures): Updated `guardNumbers` domain token regex so `₹500` matches cleanly without requiring a word boundary `\b` before the non-ASCII rupee symbol `₹`.
 - Artifacts kept: `session3_implementation_plan.md`, `session3_walkthrough.md`.
 
+### 2026-11-25 — Session 4 (M6 + M7: Full Hero UI, Drawers & Accessibility)
+- Asked: Build the complete mobile-first hero UI using Radix primitives, debounced city search + click-triggered geolocation, VerdictBanner with CPCB badge & heuristic fingerprint, Community Meter + RWA scale slider, CausalCard with 4 quick-question chips, Profile / CADR / EN-HI Brief drawers, AssumptionsModal, and `vitest-axe` + RTL tests.
+- Agent produced: `src/components/{Header,VerdictBanner,ToggleGroup,MeterCards,CausalCard,DrawerShell,ProfileDrawer,CadrDrawer,BriefDrawer,AssumptionsModal}.tsx`, updated `src/app/{page,layout,globals.css}`, and added `src/app/ui.test.tsx` (5 RTL + `vitest-axe` tests).
+- What I had to correct (include real bugs/failures): Sanitized parentheses in `"Your location (lat, lon)"` before sending `cityName` to `/api/brief` so `BriefRequestSchema` regex does not reject geolocated briefs; fixed ESLint `react-hooks/set-state-in-effect` and `jsx-a11y/role-supports-aria-props` in `Header.tsx`; moved `role="img"` + `aria-label` in `ExposureChart.tsx` from `<section>` to an inner `<div>` after `vitest-axe` flagged `aria-allowed-role`.
+- Artifacts kept: `session4_implementation_plan.md`, `session4_walkthrough.md`.
+
 ## Key lessons
 1.
 2.
