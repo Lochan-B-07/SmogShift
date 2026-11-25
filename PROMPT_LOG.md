@@ -23,6 +23,13 @@
 - What I had to correct (include real bugs/failures): Upgraded `@types/node` from `^20` to `^22` so `vitest@5` peer dependencies resolved cleanly; replaced `LayoutProps<"/">` in `src/app/layout.tsx` with explicit `Readonly<{ children: ReactNode }>: ReactElement` so `tsc --noEmit` passes in clean CI checkouts before `next build`; switched `vitest.config.ts` to `vitest.config.mts` with `import.meta.dirname` to eliminate Vite CJS/ESM config warnings; added `*.tsbuildinfo` to `.gitignore`.
 - Artifacts kept: `AGENTS.md`, `docs/IMPLEMENTATION.md`, `docs/ENGINE_SPEC.md`, `PROMPT_LOG.md`.
 
+### 2026-11-25 — M1 (Data spike & fallback snapshots)
+- Asked: Implement `scripts/capture-fallback.ts`, capture live Open-Meteo hourly snapshots for Delhi, Lucknow, Mumbai, and Bengaluru, and verify §9.5 variance decision rule.
+- Agent produced: `scripts/capture-fallback.ts` and normalized fallback JSONs in `src/data/fallback/{delhi,lucknow,mumbai,bengaluru}.json` (`snapshotDate: 2026-11-25`, 48h each, zero nulls across all 7 variables).
+- Findings (§9.5): All 4 cities show `max/min >= 1.5x` over 24h (Delhi NCR 2.94×: 47.7–140.2 µg/m³, lowest 15:00; Lucknow 2.05×: 58.8–120.6 µg/m³, lowest 14:00; Mumbai 1.60×: 43.2–69.2 µg/m³, lowest 21:00; Bengaluru 4.16×: 3.7–15.4 µg/m³, lowest 13:00 — clean-day case). Decision: lead with both smart timing and indoor defense levers. Note: CAMS modeled `PM2.5/PM10` ratios are ~0.94–0.99 across all 4 cities (`combustion` regime), reinforcing the §8.10 methodology caveat that ~45 km global modeled ratios are indicative rather than street-level dust monitors.
+- What I had to correct (include real bugs/failures): None.
+- Artifacts kept: `scripts/capture-fallback.ts`, `src/data/fallback/*.json`.
+
 ## Key lessons
 1.
 2.
