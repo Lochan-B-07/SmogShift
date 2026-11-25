@@ -24,9 +24,9 @@ export function CadrDrawer({ open, onOpenChange, roomSize }: CadrDrawerProps): R
     >
       <div className="space-y-3 text-xs">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-zinc-800">
+          <table className="w-full border-collapse text-left text-zinc-800 dark:text-zinc-200">
             <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 text-zinc-700">
+              <tr className="border-b border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                 <th scope="col" className="px-2 py-2 font-semibold">
                   Intervention
                 </th>
@@ -43,7 +43,7 @@ export function CadrDrawer({ open, onOpenChange, roomSize }: CadrDrawerProps): R
             </thead>
             <tbody>
               {methods.map((item) => (
-                <tr key={item.id} className="border-b border-zinc-100">
+                <tr key={item.id} className="border-b border-zinc-100 dark:border-zinc-800">
                   <th scope="row" className="px-2 py-2 font-semibold">
                     {item.label}
                   </th>
@@ -58,7 +58,7 @@ export function CadrDrawer({ open, onOpenChange, roomSize }: CadrDrawerProps): R
           </table>
         </div>
 
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
           <p className="font-semibold">Why potted plants are listed at 0 m³/h</p>
           <p className="mt-1">
             Houseplants are great for greenery, but peer-reviewed chamber studies show their PM2.5

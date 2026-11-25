@@ -5,6 +5,8 @@ import { buildTemplateAnalysis } from './analyzeTemplates';
 import { guardAnalyzeResponseFields } from './guard';
 import { consumeGeminiDailyQuota } from './rateLimit';
 
+const SECONDARY_FALLBACK_MODEL = 'gemini-3.5-flash';
+
 const SYSTEM_INSTRUCTION = `You explain air-quality trade-offs for an Indian household. You are given today's
 pollution regime, household profile, active toggles, a specific user question type,
 and pre-computed numbers. Rules:
@@ -12,8 +14,10 @@ and pre-computed numbers. Rules:
 2. Tailor your answer to \`question\`:
    - overview: explain WHY the active choices work under today's regime (combustion vs dust vs mixed) and name ONE highest-leverage next move.
    - why_not_plants: explain plainly why potted indoor plants cannot clear winter PM2.5 compared to sealing drafts or HEPA/DIY box-fan filtration.
-   - budget_sealing: give 2-3 practical zero/low-cost (under INR 500) indoor smog defense steps tailored to the user's cooking & room setup.
+   - budget_sealing: give practical zero/low-cost (under INR 500) indoor smog defense steps tailored to the user's cooking & room setup.
    - sensitive_member: explain practical precautions for the household's sensitive group today without giving medical diagnoses.
+   - commute_mask: explain practical commuting & mask (N95) choices based on today's regime, NO2 level, travel mode, and cleanest hour.
+   - cooking_impact: explain how the user's cooking setup interacts with indoor sealing/filtration and how to minimize kitchen PM2.5 spikes.
 3. Do not invent any new statistics, percentages, or clock times not supplied in the input.
    Prefer words ("later this afternoon") over digits.
 4. Do not give medical advice or diagnoses. At most once, in \`caveat\`, say "consider checking with a doctor."
@@ -36,17 +40,21 @@ const RESPONSE_SCHEMA = {
 };
 
 export interface GeminiDependencies {
-  readonly generateText?: (req: AnalyzeRequest, signal: AbortSignal) => Promise<string | undefined>;
+  readonly generateText?: (
+    req: AnalyzeRequest,
+    signal: AbortSignal,
+    model?: string,
+  ) => Promise<string | undefined>;
 }
 
 async function callGeminiSdk(
   req: AnalyzeRequest,
   signal: AbortSignal,
+  model: string,
 ): Promise<string | undefined> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return undefined;
 
-  const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
@@ -77,45 +85,56 @@ export async function generateCausalAnalysis(
     return buildTemplateAnalysis(req);
   }
 
+  const primaryModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+  const candidateModels =
+    primaryModel === SECONDARY_FALLBACK_MODEL
+      ? [primaryModel]
+      : [primaryModel, SECONDARY_FALLBACK_MODEL];
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
+  const allowedNumbers = [
+    req.engine.baselinePctWho,
+    req.engine.adjustedPctWho,
+    req.engine.cigAvoided,
+    req.engine.co2eKg,
+    req.engine.noxG,
+    req.engine.bestHour,
+    req.profile.commuteKm,
+    req.toggles.households,
+  ];
+  const allowedClock = [formatClockHour(req.engine.bestHour)];
+
   try {
-    const rawText = hasCustomGenerator
-      ? await deps.generateText!(req, controller.signal)
-      : await callGeminiSdk(req, controller.signal);
+    for (const model of candidateModels) {
+      if (controller.signal.aborted) break;
 
-    if (!rawText) {
-      return buildTemplateAnalysis(req);
+      try {
+        const rawText = hasCustomGenerator
+          ? await deps.generateText!(req, controller.signal, model)
+          : await callGeminiSdk(req, controller.signal, model);
+
+        if (!rawText) continue;
+
+        const json: unknown = JSON.parse(rawText);
+        const parsed = GeminiPayloadSchema.safeParse(json);
+        if (!parsed.success) continue;
+
+        if (!guardAnalyzeResponseFields(parsed.data, allowedNumbers, allowedClock)) {
+          continue;
+        }
+
+        return {
+          ...parsed.data,
+          source: 'gemini',
+        };
+      } catch {
+        // Try secondary model on transient 503/network error before falling back
+        if (controller.signal.aborted) break;
+      }
     }
 
-    const json: unknown = JSON.parse(rawText);
-    const parsed = GeminiPayloadSchema.safeParse(json);
-    if (!parsed.success) {
-      return buildTemplateAnalysis(req);
-    }
-
-    const allowedNumbers = [
-      req.engine.baselinePctWho,
-      req.engine.adjustedPctWho,
-      req.engine.cigAvoided,
-      req.engine.co2eKg,
-      req.engine.noxG,
-      req.engine.bestHour,
-      req.profile.commuteKm,
-      req.toggles.households,
-    ];
-    const allowedClock = [formatClockHour(req.engine.bestHour)];
-
-    if (!guardAnalyzeResponseFields(parsed.data, allowedNumbers, allowedClock)) {
-      return buildTemplateAnalysis(req);
-    }
-
-    return {
-      ...parsed.data,
-      source: 'gemini',
-    };
-  } catch {
     return buildTemplateAnalysis(req);
   } finally {
     clearTimeout(timeoutId);

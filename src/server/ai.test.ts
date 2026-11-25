@@ -130,12 +130,14 @@ describe('Gemini causal analysis, guard fallback, and cache', () => {
     expect(second.source).toBe('template');
   });
 
-  it('provides deterministic templates for all 4 question chips and clean_day', () => {
+  it('provides deterministic templates for all 6 question chips and clean_day', () => {
     const questions: AnalyzeQuestion[] = [
       'overview',
       'why_not_plants',
       'budget_sealing',
       'sensitive_member',
+      'commute_mask',
+      'cooking_impact',
     ];
     for (const q of questions) {
       const card = buildTemplateAnalysis({ ...SAMPLE_REQ, question: q });
@@ -149,6 +151,27 @@ describe('Gemini causal analysis, guard fallback, and cache', () => {
       engine: { ...SAMPLE_REQ.engine, bestHourLabel: 'clean_day' },
     });
     expect(cleanCard.headlineReason.toLowerCase()).toContain('clean');
+  });
+
+  it('falls back to secondary Gemini model when primary model fails with 503', async () => {
+    const calls: string[] = [];
+    const res = await generateCausalAnalysis(SAMPLE_REQ, {
+      generateText: async (_req, _signal, model) => {
+        calls.push(model ?? 'unknown');
+        if (model === 'gemini-3.5-flash-lite') {
+          throw new Error('503 UNAVAILABLE');
+        }
+        return JSON.stringify({
+          headlineReason:
+            'Combustion PM2.5 dominates today; active filtration keeps indoor air cleaner.',
+          tradeoffs: ['Sealing drafts lowers outdoor leakage.'],
+          nextMove: 'Keep HEPA active tonight.',
+          caveat: 'Consider checking with a doctor if symptoms appear.',
+        });
+      },
+    });
+    expect(calls).toEqual(['gemini-3.5-flash-lite', 'gemini-3.5-flash']);
+    expect(res.source).toBe('gemini');
   });
 
   it('guardAnalyzeResponseFields validates every field', () => {

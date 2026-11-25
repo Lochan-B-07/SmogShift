@@ -28,11 +28,16 @@ export function ToggleGroup({ toggles, bestHour, onChange }: ToggleGroupProps): 
   return (
     <section
       aria-label="What-if simulation controls"
-      className="grid gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-xs sm:grid-cols-2"
+      className="grid gap-4 rounded-2xl border border-zinc-200/90 bg-white/95 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95 sm:grid-cols-2"
     >
       <div>
-        <h2 className="text-sm font-semibold text-zinc-900">1. Indoor defense</h2>
-        <p className="mb-2 text-xs text-zinc-700">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-teal-100 text-[11px] font-bold text-teal-900 dark:bg-teal-900/70 dark:text-teal-200">
+            1
+          </span>
+          <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Indoor defense</h2>
+        </div>
+        <p className="mb-2.5 mt-1 text-xs text-zinc-700 dark:text-zinc-300">
           {describeIndoorDefense(toggles.indoor)} · Controls indoor leakage &amp; particle removal.
         </p>
         <RadixToggleGroup.Root
@@ -50,7 +55,7 @@ export function ToggleGroup({ toggles, bestHour, onChange }: ToggleGroupProps): 
             <RadixToggleGroup.Item
               key={opt.value}
               value={opt.value}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 data-[state=on]:border-teal-800 data-[state=on]:bg-teal-800 data-[state=on]:text-white"
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 data-[state=on]:border-teal-800 data-[state=on]:bg-teal-800 data-[state=on]:text-white dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:data-[state=on]:border-teal-600 dark:data-[state=on]:bg-teal-600 dark:data-[state=on]:text-white"
             >
               {opt.label}
             </RadixToggleGroup.Item>
@@ -60,8 +65,13 @@ export function ToggleGroup({ toggles, bestHour, onChange }: ToggleGroupProps): 
 
       <div className="flex flex-col gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">2. Daily travel</h2>
-          <p className="mb-2 text-xs text-zinc-700">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-teal-100 text-[11px] font-bold text-teal-900 dark:bg-teal-900/70 dark:text-teal-200">
+              2
+            </span>
+            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Daily travel</h2>
+          </div>
+          <p className="mb-2.5 mt-1 text-xs text-zinc-700 dark:text-zinc-300">
             {describeTravelMode(toggles.travel)} · Affects community emissions only; in-vehicle
             exposure is not modeled.
           </p>
@@ -80,7 +90,7 @@ export function ToggleGroup({ toggles, bestHour, onChange }: ToggleGroupProps): 
               <RadixToggleGroup.Item
                 key={opt.value}
                 value={opt.value}
-                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 data-[state=on]:border-teal-800 data-[state=on]:bg-teal-800 data-[state=on]:text-white"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 data-[state=on]:border-teal-800 data-[state=on]:bg-teal-800 data-[state=on]:text-white dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:data-[state=on]:border-teal-600 dark:data-[state=on]:bg-teal-600 dark:data-[state=on]:text-white"
               >
                 {opt.label}
               </RadixToggleGroup.Item>
@@ -88,11 +98,16 @@ export function ToggleGroup({ toggles, bestHour, onChange }: ToggleGroupProps): 
           </RadixToggleGroup.Root>
         </div>
 
-        <div className="border-t border-zinc-100 pt-2">
+        <div className="border-t border-zinc-100 pt-2.5 dark:border-zinc-800">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold text-zinc-900">3. Smart timing</h2>
-              <p className="text-xs text-zinc-700">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-teal-100 text-[11px] font-bold text-teal-900 dark:bg-teal-900/70 dark:text-teal-200">
+                  3
+                </span>
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Smart timing</h2>
+              </div>
+              <p className="mt-0.5 text-xs text-zinc-700 dark:text-zinc-300">
                 Moves airing &amp; outdoor errand from 07:00 to {formatClockHour(bestHour)}.
               </p>
             </div>
@@ -102,10 +117,10 @@ export function ToggleGroup({ toggles, bestHour, onChange }: ToggleGroupProps): 
               aria-checked={toggles.smartTiming}
               aria-label="Toggle smart timing"
               onClick={() => onChange({ ...toggles, smartTiming: !toggles.smartTiming })}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 ${
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 ${
                 toggles.smartTiming
-                  ? 'bg-teal-800 text-white'
-                  : 'border border-zinc-300 bg-zinc-100 text-zinc-800 hover:bg-zinc-200'
+                  ? 'bg-teal-800 text-white shadow-xs dark:bg-teal-600'
+                  : 'border border-zinc-300 bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
               {toggles.smartTiming ? 'On' : 'Off'}

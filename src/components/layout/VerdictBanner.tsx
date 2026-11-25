@@ -14,17 +14,34 @@ export interface VerdictBannerProps {
 function getBadgeStyle(band: CpcbBandKey): string {
   switch (band) {
     case 'good':
-      return 'border-emerald-300 bg-emerald-50 text-emerald-950';
+      return 'border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200';
     case 'satisfactory':
-      return 'border-lime-300 bg-lime-50 text-lime-950';
+      return 'border-lime-300 bg-lime-50 text-lime-950 dark:border-lime-700 dark:bg-lime-950/60 dark:text-lime-200';
     case 'moderately_polluted':
-      return 'border-amber-300 bg-amber-50 text-amber-950';
+      return 'border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-200';
     case 'poor':
-      return 'border-orange-300 bg-orange-50 text-orange-950';
+      return 'border-orange-300 bg-orange-50 text-orange-950 dark:border-orange-700 dark:bg-orange-950/60 dark:text-orange-200';
     case 'very_poor':
-      return 'border-red-300 bg-red-50 text-red-950';
+      return 'border-red-300 bg-red-50 text-red-950 dark:border-red-700 dark:bg-red-950/60 dark:text-red-200';
     case 'severe':
-      return 'border-rose-400 bg-rose-50 text-rose-950';
+      return 'border-rose-400 bg-rose-50 text-rose-950 dark:border-rose-700 dark:bg-rose-950/60 dark:text-rose-200';
+  }
+}
+
+function getLeftAccent(band: CpcbBandKey): string {
+  switch (band) {
+    case 'good':
+      return 'border-l-emerald-600';
+    case 'satisfactory':
+      return 'border-l-lime-600';
+    case 'moderately_polluted':
+      return 'border-l-amber-500';
+    case 'poor':
+      return 'border-l-orange-600';
+    case 'very_poor':
+      return 'border-l-red-600';
+    case 'severe':
+      return 'border-l-rose-700';
   }
 }
 
@@ -54,14 +71,14 @@ export function VerdictBanner({
     <section
       aria-live="polite"
       aria-label="Daily air quality verdict"
-      className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs"
+      className={`rounded-2xl border border-l-4 border-zinc-200/90 bg-white/95 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95 ${getLeftAccent(category.band)}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-zinc-900">
+        <p className="text-base font-bold text-zinc-900 dark:text-zinc-50">
           {describeBestWindowLabel(summary.bestHourLabel, summary.bestHour)}
         </p>
         <span
-          className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold ${getBadgeStyle(category.band)}`}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${getBadgeStyle(category.band)}`}
         >
           <BandIcon band={category.band} />
           <span>
@@ -70,14 +87,17 @@ export function VerdictBanner({
         </span>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-700">
-        <span>
-          Source fingerprint (heuristic):{' '}
-          <strong className="capitalize">{fingerprint.regime}</strong>
-          {fingerprint.ratio !== null ? ` (PM2.5/PM10 ≈ ${fingerprint.ratio.toFixed(2)})` : ''} ·
-          NO2: <strong className="capitalize">{fingerprint.no2Level}</strong>
-        </span>
-        <span className="text-zinc-600">
+      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="rounded-md bg-zinc-100 px-2 py-0.5 font-medium text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+            Heuristic regime: <strong className="capitalize">{fingerprint.regime}</strong>
+            {fingerprint.ratio !== null ? ` (${fingerprint.ratio.toFixed(2)})` : ''}
+          </span>
+          <span className="rounded-md bg-zinc-100 px-2 py-0.5 font-medium text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+            NO2: <strong className="capitalize">{fingerprint.no2Level}</strong>
+          </span>
+        </div>
+        <span className="text-zinc-600 dark:text-zinc-400">
           Assumes non-commute hours are spent at home; workplace/school indoor air is not modeled.
         </span>
       </div>

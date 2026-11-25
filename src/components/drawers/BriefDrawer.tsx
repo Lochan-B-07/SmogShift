@@ -120,10 +120,10 @@ export function BriefDrawer({
             type="button"
             aria-pressed={lang === 'en'}
             onClick={() => setLang('en')}
-            className={`rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 ${
+            className={`rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 ${
               lang === 'en'
-                ? 'bg-teal-800 text-white'
-                : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100'
+                ? 'bg-teal-800 text-white dark:bg-teal-600'
+                : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
             }`}
           >
             English
@@ -132,10 +132,10 @@ export function BriefDrawer({
             type="button"
             aria-pressed={lang === 'hi'}
             onClick={() => setLang('hi')}
-            className={`rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 ${
+            className={`rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 ${
               lang === 'hi'
-                ? 'bg-teal-800 text-white'
-                : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100'
+                ? 'bg-teal-800 text-white dark:bg-teal-600'
+                : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
             }`}
           >
             हिन्दी (Hindi)
@@ -143,13 +143,13 @@ export function BriefDrawer({
         </div>
 
         {loading ? (
-          <p className="text-zinc-700">Building brief...</p>
+          <p className="text-zinc-700 dark:text-zinc-300">Building brief...</p>
         ) : error ? (
-          <p className="text-red-800">{error}</p>
+          <p className="text-red-800 dark:text-red-300">{error}</p>
         ) : (
           <pre
             lang={lang}
-            className="whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-3 font-sans text-xs leading-relaxed text-zinc-900"
+            className="whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-3 font-sans text-xs leading-relaxed text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           >
             {briefText}
           </pre>
@@ -160,7 +160,7 @@ export function BriefDrawer({
             type="button"
             onClick={() => void handleCopy()}
             disabled={!briefText}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 font-semibold text-zinc-900 hover:bg-zinc-100 disabled:opacity-50 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 font-semibold text-zinc-900 hover:bg-zinc-100 disabled:opacity-50 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
           >
             {copied === 'copied'
               ? 'Copied!'
@@ -172,7 +172,7 @@ export function BriefDrawer({
             href={`https://wa.me/?text=${encodeURIComponent(briefText)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center rounded-lg bg-teal-800 px-3 py-1.5 font-semibold text-white hover:bg-teal-900 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
+            className="inline-flex items-center rounded-lg bg-teal-800 px-3 py-1.5 font-semibold text-white hover:bg-teal-900 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500"
           >
             Share on WhatsApp
           </a>

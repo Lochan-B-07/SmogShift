@@ -24,26 +24,46 @@ export function MeterCards({
   onHouseholdsChange,
 }: MeterCardsProps): ReactElement {
   const currentStepIndex = Math.max(0, RWA_STEPS.indexOf(households));
+  const reductionPct =
+    summary.baselinePctWho > 0
+      ? Math.max(
+          0,
+          Math.round(
+            ((summary.baselinePctWho - summary.adjustedPctWho) / summary.baselinePctWho) * 100,
+          ),
+        )
+      : 0;
 
   return (
     <Tooltip.Provider delayDuration={150}>
       <section aria-label="Exposure and community meters" className="grid gap-4 sm:grid-cols-2">
         <div
           aria-live="polite"
-          className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-xs"
+          className="flex flex-col justify-between rounded-2xl border border-zinc-200/90 bg-white/95 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95"
         >
           <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Household Exposure Meter</h2>
-            <p className="mt-2 text-xl font-bold text-zinc-900">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+                Household Exposure Meter
+              </h2>
+              {reductionPct > 0 ? (
+                <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
+                  −{reductionPct}% exposure
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-2 text-xl font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
               {formatWhoPercent(summary.adjustedPctWho)}
             </p>
-            <p className="text-xs text-zinc-700">
-              Baseline without changes: {formatWhoPercent(summary.baselinePctWho)} · 24-h mean:{' '}
-              {adjustedMean24.toFixed(1)} µg/m³
+            <p className="text-xs text-zinc-700 dark:text-zinc-300">
+              Baseline:{' '}
+              <span className="tabular-nums">{formatWhoPercent(summary.baselinePctWho)}</span> ·
+              24-h mean:{' '}
+              <span className="font-semibold tabular-nums">{adjustedMean24.toFixed(1)} µg/m³</span>
             </p>
 
-            <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-zinc-50 p-2.5">
-              <span className="text-sm font-bold text-teal-900">
+            <div className="mt-3 flex items-center gap-1.5 rounded-xl border border-teal-200/80 bg-teal-50/70 p-2.5 dark:border-teal-900 dark:bg-teal-950/40">
+              <span className="text-sm font-bold tabular-nums text-teal-900 dark:text-teal-200">
                 {summary.cigAvoided.toFixed(2)} cigarettes/day avoided
               </span>
               <Tooltip.Root>
@@ -51,7 +71,7 @@ export function MeterCards({
                   <button
                     type="button"
                     aria-label="Explain cigarette equivalence heuristic"
-                    className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-400 text-[11px] font-bold text-zinc-800 hover:bg-zinc-200 focus:outline-2 focus:outline-offset-1 focus:outline-teal-800"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-400 bg-white text-[11px] font-bold text-zinc-800 hover:bg-zinc-100 focus:outline-2 focus:outline-offset-1 focus:outline-teal-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                   >
                     ?
                   </button>
@@ -59,18 +79,18 @@ export function MeterCards({
                 <Tooltip.Portal>
                   <Tooltip.Content
                     sideOffset={5}
-                    className="z-50 max-w-xs rounded-lg bg-zinc-900 px-3 py-2 text-xs text-white shadow-lg"
+                    className="z-50 max-w-xs rounded-lg bg-zinc-900 px-3 py-2 text-xs text-white shadow-lg dark:bg-zinc-800"
                   >
                     Rough rule of thumb: Berkeley Earth equates ~22 µg/m³ of daily PM2.5 to ~1
                     cigarette/day. Not a clinical equivalence.
-                    <Tooltip.Arrow className="fill-zinc-900" />
+                    <Tooltip.Arrow className="fill-zinc-900 dark:fill-zinc-800" />
                   </Tooltip.Content>
                 </Tooltip.Portal>
               </Tooltip.Root>
             </div>
           </div>
 
-          <p className="mt-3 text-xs text-zinc-600">
+          <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
             Time-weighted exposure concentration, not a medical inhaled dose (breathing rate and
             activity intensity are not modeled).
           </p>
@@ -78,31 +98,39 @@ export function MeterCards({
 
         <div
           aria-live="polite"
-          className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-xs"
+          className="flex flex-col justify-between rounded-2xl border border-zinc-200/90 bg-white/95 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95"
         >
           <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Community Emissions Meter</h2>
+            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+              Community Emissions Meter
+            </h2>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-zinc-50 p-2.5">
-                <p className="text-xs text-zinc-700">CO2e avoided/day</p>
-                <p className="text-lg font-bold text-zinc-900">{summary.co2eKg.toFixed(1)} kg</p>
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-800/70">
+                <p className="text-xs text-zinc-700 dark:text-zinc-300">CO2e avoided/day</p>
+                <p className="text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
+                  {summary.co2eKg.toFixed(1)} kg
+                </p>
               </div>
-              <div className="rounded-lg bg-zinc-50 p-2.5">
-                <p className="text-xs text-zinc-700">NOx avoided/day</p>
-                <p className="text-lg font-bold text-zinc-900">{summary.noxG.toFixed(1)} g</p>
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-800/70">
+                <p className="text-xs text-zinc-700 dark:text-zinc-300">NOx avoided/day</p>
+                <p className="text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
+                  {summary.noxG.toFixed(1)} g
+                </p>
               </div>
             </div>
 
             {travel === 'solo_car' ? (
-              <p className="mt-2 text-xs font-medium text-amber-900">
+              <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 text-xs font-medium text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 Switch Daily Travel to Carpool or Metro + Walk to see society emission savings.
               </p>
             ) : null}
 
             <div className="mt-3">
-              <div className="flex items-center justify-between text-xs font-medium text-zinc-800">
+              <div className="flex items-center justify-between text-xs font-medium text-zinc-800 dark:text-zinc-200">
                 <label id="rwa-slider-label">RWA society scale</label>
-                <span className="font-bold text-teal-900">{households} households</span>
+                <span className="font-bold text-teal-900 dark:text-teal-300">
+                  {households} households
+                </span>
               </div>
               <Slider.Root
                 aria-labelledby="rwa-slider-label"
@@ -117,13 +145,13 @@ export function MeterCards({
                 }}
                 className="relative mt-2 flex h-5 w-full touch-none select-none items-center"
               >
-                <Slider.Track className="relative h-1.5 w-full grow rounded-full bg-zinc-200">
-                  <Slider.Range className="absolute h-full rounded-full bg-teal-800" />
+                <Slider.Track className="relative h-1.5 w-full grow rounded-full bg-zinc-200 dark:bg-zinc-700">
+                  <Slider.Range className="absolute h-full rounded-full bg-teal-800 dark:bg-teal-500" />
                 </Slider.Track>
                 <Slider.Thumb
                   aria-label="Households participating"
                   aria-valuetext={`${households} households`}
-                  className="block h-5 w-5 rounded-full border-2 border-teal-800 bg-white shadow focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
+                  className="block h-5 w-5 rounded-full border-2 border-teal-800 bg-white shadow focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-teal-400 dark:bg-zinc-900"
                 />
               </Slider.Root>
               <div className="mt-1 grid grid-cols-4 gap-1 text-[11px]">
@@ -133,10 +161,10 @@ export function MeterCards({
                     type="button"
                     aria-pressed={households === step}
                     onClick={() => onHouseholdsChange(step)}
-                    className={`rounded py-0.5 font-medium transition focus:outline-2 focus:outline-offset-1 focus:outline-teal-800 ${
+                    className={`rounded py-0.5 font-medium transition focus:outline-2 focus:outline-offset-1 focus:outline-teal-700 ${
                       households === step
-                        ? 'bg-teal-100 font-bold text-teal-900'
-                        : 'text-zinc-600 hover:bg-zinc-100'
+                        ? 'bg-teal-100 font-bold text-teal-900 dark:bg-teal-900/70 dark:text-teal-200'
+                        : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
                     }`}
                   >
                     {step}
@@ -146,7 +174,7 @@ export function MeterCards({
             </div>
           </div>
 
-          <p className="mt-3 text-xs text-zinc-600">
+          <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
             Illustrative scenario: if {households} households in your society make this swap. Not a
             forecast of neighborhood air quality. Tailpipe PM2.5 from a car swap is small compared
             with road dust and biomass burning, so we headline CO2e and NOx.

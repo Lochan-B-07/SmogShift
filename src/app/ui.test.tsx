@@ -106,6 +106,8 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
 
   afterEach(() => {
     cleanup();
+    document.documentElement.classList.remove('dark');
+    window.localStorage.clear();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -182,7 +184,7 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     expect(getBestWindowBounds(endPts, endData)).toEqual({ x1: '22:00', x2: '23:00' });
   });
 
-  it('fetches question-specific explanation when clicking quick-question chip', async () => {
+  it('fetches question-specific explanation when clicking quick-question chips including new commute and cooking chips', async () => {
     const fetchMock = setupFetchMock();
     const user = userEvent.setup();
     render(<Home />);
@@ -190,17 +192,43 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     await screen.findByText(/Modeled forecast · Open-Meteo/i);
 
     await user.click(screen.getByRole('button', { name: 'Why not indoor plants?' }));
-
     await screen.findByText(/Explanation for why_not_plants/i);
     expect(screen.getByText('Rule-based explanation')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Best commute & mask plan' }));
+    await screen.findByText(/Explanation for commute_mask/i);
+
+    await user.click(screen.getByRole('button', { name: 'Cooking fumes & exhaust' }));
+    await screen.findByText(/Explanation for cooking_impact/i);
 
     const analyzeCall = fetchMock.mock.calls.find(
       ([url, init]) =>
         typeof url === 'string' &&
         url.startsWith('/api/analyze') &&
-        String(init?.body ?? '').includes('why_not_plants'),
+        String(init?.body ?? '').includes('cooking_impact'),
     );
     expect(analyzeCall).toBeDefined();
+  });
+
+  it('toggles light/dark mode, updates html class and localStorage, and keeps 0 axe violations', async () => {
+    setupFetchMock();
+    const user = userEvent.setup();
+    const { container } = render(<Home />);
+
+    await screen.findByText(/Modeled forecast · Open-Meteo/i);
+    const themeBtn = screen.getByRole('button', { name: /Switch to dark mode/i });
+    expect(themeBtn).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(themeBtn);
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(window.localStorage.getItem('smogshift-theme')).toBe('dark');
+    expect(screen.getByRole('button', { name: /Switch to light mode/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    const axeResults = await axe(container);
+    expect(axeResults.violations).toEqual([]);
   });
 
   it('shows offline snapshot banner when source.isFallback is true', async () => {

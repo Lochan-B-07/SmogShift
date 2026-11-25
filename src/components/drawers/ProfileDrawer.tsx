@@ -12,6 +12,12 @@ export interface ProfileDrawerProps {
   readonly onChange: (next: HouseholdProfile) => void;
 }
 
+const BTN_BASE =
+  'rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-700';
+const BTN_ON = 'bg-teal-800 text-white dark:bg-teal-600';
+const BTN_OFF =
+  'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700';
+
 export function ProfileDrawer({
   open,
   onOpenChange,
@@ -27,7 +33,9 @@ export function ProfileDrawer({
     >
       <div className="space-y-4 text-xs">
         <fieldset>
-          <legend className="mb-1.5 font-semibold text-zinc-900">Sensitive group</legend>
+          <legend className="mb-1.5 font-semibold text-zinc-900 dark:text-zinc-100">
+            Sensitive group
+          </legend>
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -43,11 +51,7 @@ export function ProfileDrawer({
                 type="button"
                 aria-pressed={profile.sensitive === val}
                 onClick={() => onChange({ ...profile, sensitive: val })}
-                className={`rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 ${
-                  profile.sensitive === val
-                    ? 'bg-teal-800 text-white'
-                    : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100'
-                }`}
+                className={`${BTN_BASE} ${profile.sensitive === val ? BTN_ON : BTN_OFF}`}
               >
                 {label}
               </button>
@@ -56,7 +60,9 @@ export function ProfileDrawer({
         </fieldset>
 
         <fieldset>
-          <legend className="mb-1.5 font-semibold text-zinc-900">Primary room size</legend>
+          <legend className="mb-1.5 font-semibold text-zinc-900 dark:text-zinc-100">
+            Primary room size
+          </legend>
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -70,11 +76,7 @@ export function ProfileDrawer({
                 type="button"
                 aria-pressed={profile.roomSize === val}
                 onClick={() => onChange({ ...profile, roomSize: val })}
-                className={`rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 ${
-                  profile.roomSize === val
-                    ? 'bg-teal-800 text-white'
-                    : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100'
-                }`}
+                className={`${BTN_BASE} ${profile.roomSize === val ? BTN_ON : BTN_OFF}`}
               >
                 {label}
               </button>
@@ -83,7 +85,9 @@ export function ProfileDrawer({
         </fieldset>
 
         <fieldset>
-          <legend className="mb-1.5 font-semibold text-zinc-900">Cooking setup</legend>
+          <legend className="mb-1.5 font-semibold text-zinc-900 dark:text-zinc-100">
+            Cooking setup
+          </legend>
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -97,11 +101,7 @@ export function ProfileDrawer({
                 type="button"
                 aria-pressed={profile.cooking === val}
                 onClick={() => onChange({ ...profile, cooking: val })}
-                className={`rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 ${
-                  profile.cooking === val
-                    ? 'bg-teal-800 text-white'
-                    : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100'
-                }`}
+                className={`${BTN_BASE} ${profile.cooking === val ? BTN_ON : BTN_OFF}`}
               >
                 {label}
               </button>
@@ -110,7 +110,7 @@ export function ProfileDrawer({
         </fieldset>
 
         <fieldset>
-          <legend className="mb-1.5 font-semibold text-zinc-900">
+          <legend className="mb-1.5 font-semibold text-zinc-900 dark:text-zinc-100">
             One-way daily commute distance
           </legend>
           <div className="flex flex-wrap gap-2">
@@ -120,11 +120,7 @@ export function ProfileDrawer({
                 type="button"
                 aria-pressed={profile.commuteKm === km}
                 onClick={() => onChange({ ...profile, commuteKm: km })}
-                className={`rounded-lg px-3 py-1.5 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-teal-800 ${
-                  profile.commuteKm === km
-                    ? 'bg-teal-800 text-white'
-                    : 'border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100'
-                }`}
+                className={`${BTN_BASE} ${profile.commuteKm === km ? BTN_ON : BTN_OFF}`}
               >
                 {km} km
               </button>
@@ -132,11 +128,11 @@ export function ProfileDrawer({
           </div>
         </fieldset>
 
-        <div className="border-t border-zinc-200 pt-3">
+        <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800">
           <button
             type="button"
             onClick={() => onChange(DEFAULT_PROFILE)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 font-semibold text-zinc-800 hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
+            className={`${BTN_BASE} ${BTN_OFF}`}
           >
             Reset to defaults
           </button>

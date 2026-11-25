@@ -15,10 +15,12 @@ import { VerdictBanner } from '@/components/layout/VerdictBanner';
 import { useAirQuality, type ActiveLocation } from '@/hooks/useAirQuality';
 import { useAnalyze } from '@/hooks/useAnalyze';
 import { useSimulation } from '@/hooks/useSimulation';
+import { useTheme } from '@/hooks/useTheme';
 import { DEFAULT_CITY, DEFAULT_PROFILE, DEFAULT_TOGGLES } from '@/lib/presets';
 import type { AnalyzeQuestion, HouseholdProfile, Toggles } from '@/shared/schemas';
 
 export default function Home(): ReactElement {
+  const { theme, toggleTheme } = useTheme();
   const [location, setLocation] = useState<ActiveLocation>(DEFAULT_CITY);
   const [profile, setProfile] = useState<HouseholdProfile>(DEFAULT_PROFILE);
   const [toggles, setToggles] = useState<Toggles>(DEFAULT_TOGGLES);
@@ -48,7 +50,7 @@ export default function Home(): ReactElement {
   });
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="min-h-screen bg-gradient-to-b from-teal-50/70 via-zinc-50 to-zinc-100 text-zinc-900 dark:from-teal-950/25 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-100">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-teal-800 focus:px-4 focus:py-2 focus:text-xs focus:font-semibold focus:text-white"
@@ -60,6 +62,8 @@ export default function Home(): ReactElement {
         location={location}
         airQuality={data}
         loading={loading}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onSelectLocation={setLocation}
         onOpenProfile={() => setProfileOpen(true)}
         onOpenCadr={() => setCadrOpen(true)}
@@ -70,11 +74,11 @@ export default function Home(): ReactElement {
         {loading && !data ? (
           <div
             aria-live="polite"
-            className="space-y-3 rounded-xl border border-zinc-200 bg-white p-6"
+            className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
           >
-            <div className="h-4 w-48 animate-pulse rounded bg-zinc-200" />
-            <div className="h-56 w-full animate-pulse rounded bg-zinc-100" />
-            <p className="text-xs text-zinc-700">
+            <div className="h-4 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-56 w-full animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />
+            <p className="text-xs text-zinc-700 dark:text-zinc-300">
               Loading modeled 48-hour air quality forecast for {location.name}...
             </p>
           </div>
@@ -83,13 +87,13 @@ export default function Home(): ReactElement {
         {error ? (
           <div
             role="alert"
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-950"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-950 dark:border-red-800 dark:bg-red-950/60 dark:text-red-200"
           >
             <span>{error}</span>
             <button
               type="button"
               onClick={retry}
-              className="rounded-lg bg-red-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-800"
+              className="rounded-lg bg-red-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700"
             >
               Retry
             </button>
@@ -99,13 +103,13 @@ export default function Home(): ReactElement {
         {simulation && !simulation.ok ? (
           <div
             role="alert"
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-200"
           >
             <span>Insufficient forecast data (&gt;3 consecutive missing hours).</span>
             <button
               type="button"
               onClick={retry}
-              className="rounded-lg bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white focus:outline-2 focus:outline-offset-2 focus:outline-amber-900"
+              className="rounded-lg bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white focus:outline-2 focus:outline-offset-2 focus:outline-amber-700"
             >
               Retry
             </button>
@@ -125,6 +129,7 @@ export default function Home(): ReactElement {
               baselinePctWho={simulation.summary.baselinePctWho}
               adjustedPctWho={simulation.summary.adjustedPctWho}
               bestHour={simulation.summary.bestHour}
+              isDark={theme === 'dark'}
             />
 
             <HourlyTable points={simulation.points} />
@@ -148,6 +153,9 @@ export default function Home(): ReactElement {
               analysis={analysis}
               loading={analyzeLoading}
               error={analyzeError}
+              regime={data.fingerprint.regime}
+              profile={profile}
+              toggles={toggles}
               onSelectQuestion={setQuestion}
             />
 
@@ -172,12 +180,12 @@ export default function Home(): ReactElement {
         ) : null}
       </main>
 
-      <footer className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 px-4 pb-8 pt-2 text-xs text-zinc-700">
+      <footer className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 px-4 pb-8 pt-2 text-xs text-zinc-700 dark:text-zinc-400">
         <span>Air quality data by Open-Meteo.com (CC BY 4.0) · Not medical advice.</span>
         <button
           type="button"
           onClick={() => setAssumptionsOpen(true)}
-          className="font-semibold text-teal-900 underline underline-offset-2 hover:text-teal-700 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
+          className="font-semibold text-teal-900 underline underline-offset-2 hover:text-teal-700 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
         >
           Assumptions &amp; methodology
         </button>

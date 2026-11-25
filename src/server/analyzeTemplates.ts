@@ -5,7 +5,7 @@ function clockString(hour: number): string {
 }
 
 export function buildTemplateAnalysis(req: AnalyzeRequest): AnalyzeResponse {
-  const { question, regime, profile, toggles, engine } = req;
+  const { question, regime, no2Level, profile, toggles, engine } = req;
   const bestClock = clockString(engine.bestHour);
   const isClean = engine.bestHourLabel === 'clean_day';
   const hasSensitive = profile.sensitive !== 'none';
@@ -67,6 +67,60 @@ export function buildTemplateAnalysis(req: AnalyzeRequest): AnalyzeResponse {
         : 'Schedule outdoor errands around the cleanest daytime hour shown above.',
       caveat:
         'This simulator estimates time-weighted concentration, not medical risk—consider checking with a doctor.',
+      source: 'template',
+    };
+  }
+
+  if (question === 'commute_mask') {
+    const travelNote =
+      toggles.travel === 'metro_walk'
+        ? 'Walking to metro cuts community tailpipe emissions, though walking segments still expose you to roadside air.'
+        : toggles.travel === 'carpool'
+          ? 'Carpooling trims society emissions, while keeping car AC on recirculate reduces roadside dust and NO2.'
+          : 'Solo driving keeps community emissions highest; carpooling or metro + walk cuts CO2e and NOx.';
+    const no2Note =
+      no2Level === 'high'
+        ? 'Elevated roadside NO2 makes avoiding busy main-road intersections during walking segments especially worthwhile.'
+        : 'Pairing a snug N95 mask on polluted days blocks fine combustion PM2.5 far better than cloth masks.';
+    return {
+      headlineReason: isClean
+        ? `Outdoor air is in the clean range today, making ${bestClock} an easy window for outdoor errands and active commuting.`
+        : `Planning outdoor errands near ${bestClock} and protecting your breathing during peak traffic hours lowers daily particle intake.`,
+      tradeoffs: [
+        travelNote,
+        no2Note,
+        'Travel toggles shift shared neighborhood emissions rather than your personal indoor curve.',
+      ],
+      nextMove: isClean
+        ? 'Enjoy normal commuting and keep low-emission travel habits active.'
+        : `Wear a snug N95 mask during commutes and move flexible outdoor chores toward ${bestClock}.`,
+      caveat:
+        'In-vehicle cabin filtration and walking exertion rates are not modeled in the personal curve.',
+      source: 'template',
+    };
+  }
+
+  if (question === 'cooking_impact') {
+    const stoveNote =
+      profile.cooking === 'gas_no_exhaust'
+        ? 'Unvented gas cooking creates sharp indoor PM2.5 peaks that linger if doors and windows stay sealed.'
+        : profile.cooking === 'gas_exhaust'
+          ? 'Running your kitchen exhaust during cooking cuts indoor particle buildup substantially compared with unvented gas.'
+          : 'Induction cooking produces far fewer fine particles indoors than gas burners, keeping sealed rooms cleaner.';
+    return {
+      headlineReason: `${stoveNote} Pairing source control with active filtration keeps evening indoor peaks low.`,
+      tradeoffs: [
+        'Cooking emissions add directly on top of whatever outdoor smog leaks into your room.',
+        toggles.indoor === 'seal_exhaust'
+          ? 'Sealing drafts while venting cooking keeps outdoor smog out without trapping kitchen smoke.'
+          : 'A HEPA or DIY filter box clears residual cooking particles quickly after burners turn off.',
+        `Brief airing around ${bestClock} helps refresh indoor air when outdoor PM2.5 dips.`,
+      ],
+      nextMove:
+        profile.cooking === 'gas_no_exhaust'
+          ? 'Turn on kitchen exhaust or crack a window strictly during cooking, or switch on Seal + Exhaust.'
+          : 'Keep running kitchen venting during cooking and close up promptly afterward.',
+      caveat: 'Cooking tiers reflect typical order-of-magnitude particulate emission assumptions.',
       source: 'template',
     };
   }

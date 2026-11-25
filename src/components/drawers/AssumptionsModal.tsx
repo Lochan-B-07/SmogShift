@@ -74,9 +74,11 @@ export function AssumptionsModal({ open, onOpenChange }: AssumptionsModalProps):
       title="Assumptions & Methodology"
       description="Transparent physics constants, citations, and model boundaries."
     >
-      <div className="space-y-4 text-xs text-zinc-800">
+      <div className="space-y-4 text-xs text-zinc-800 dark:text-zinc-200">
         <div>
-          <h3 className="font-semibold text-zinc-900">Modeled forecast vs. ground monitors</h3>
+          <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+            Modeled forecast vs. ground monitors
+          </h3>
           <p className="mt-1">
             Hourly air-quality forecasts come from Open-Meteo (Copernicus CAMS ~45 km global model).
             They are indicative regional forecasts—not street-level CPCB sensor readings.
@@ -84,7 +86,9 @@ export function AssumptionsModal({ open, onOpenChange }: AssumptionsModalProps):
         </div>
 
         <div>
-          <h3 className="font-semibold text-zinc-900">What we explicitly do NOT model</h3>
+          <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+            What we explicitly do NOT model
+          </h3>
           <ul className="mt-1 list-disc space-y-1 pl-4">
             <li>Workplace or school indoor air quality (non-commute hours assume home).</li>
             <li>In-vehicle cabin exposure during commutes.</li>
@@ -96,7 +100,7 @@ export function AssumptionsModal({ open, onOpenChange }: AssumptionsModalProps):
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 text-zinc-700">
+              <tr className="border-b border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                 <th scope="col" className="px-2 py-1.5 font-semibold">
                   Parameter
                 </th>
@@ -110,14 +114,14 @@ export function AssumptionsModal({ open, onOpenChange }: AssumptionsModalProps):
             </thead>
             <tbody>
               {CONSTANT_ROWS.map(([name, item]) => (
-                <tr key={name} className="border-b border-zinc-100">
+                <tr key={name} className="border-b border-zinc-100 dark:border-zinc-800">
                   <th scope="row" className="px-2 py-1.5 font-medium">
                     {name}
                   </th>
                   <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">
                     {item.value} {item.unit}
                   </td>
-                  <td className="px-2 py-1.5 text-zinc-600">{item.source}</td>
+                  <td className="px-2 py-1.5 text-zinc-600 dark:text-zinc-400">{item.source}</td>
                 </tr>
               ))}
             </tbody>

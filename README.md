@@ -18,7 +18,7 @@ A mobile-first urban air-quality what-if simulator that turns live hourly $\text
 | Indoor air quality hacks | Indoor defense toggle (`seal_exhaust` / `diy_box` / `hepa`), CADR/ACH comparison drawer, cooking profile | `src/engine/indoorModel.ts`, `src/engine/cadr.ts`, `src/components/drawers/CadrDrawer.tsx` |
 | Real-time data integration | Open-Meteo Air Quality hourly (modeled) proxy with `revalidate: 900` and labeled static ES fallback | `src/server/openMeteo.ts`, `src/server/fallback.ts`, `src/app/api/air-quality/route.ts` |
 | User-friendly location UX | Preset city chips, debounced Indian city search, on-click `"Use my location"` | `src/components/layout/Header.tsx`, `src/app/api/geocode/route.ts` |
-| Justification of action | Grounded `CausalCard` + 4 enum quick-question chips, `AssumptionsModal`, `docs/ENGINE_SPEC.md` | `src/components/controls/CausalCard.tsx`, `src/components/drawers/AssumptionsModal.tsx`, `docs/ENGINE_SPEC.md` |
+| Justification of action | Grounded `CausalCard` + 6 enum quick-question chips, `AssumptionsModal`, `docs/ENGINE_SPEC.md` | `src/components/controls/CausalCard.tsx`, `src/components/drawers/AssumptionsModal.tsx`, `docs/ENGINE_SPEC.md` |
 
 ---
 
@@ -46,7 +46,7 @@ flowchart LR
 | Responsibility | Handled By | Why |
 |---|---|---|
 | Indoor/outdoor mass balance, `06:00–22:00` airing window, WHO `%`, cigarettes avoided, $\text{CO}_2\text{e}$ & $\text{NO}_x$ | `src/engine/*` (pure TypeScript) | Reproducible, sub-millisecond UI updates, verified against hand-computed fixtures `F1–F11` |
-| Causal trade-off synthesis (`Overview`, `Why not indoor plants?`, `Under-₹500 sealing tips`, `Kids & elders today`) | `src/server/gemini.ts` + `src/server/guard.ts` | Natural-language reasoning grounded in regime (`combustion`/`mixed`/`dust`), profile, and active toggles; `guardNumbers()` rejects invented digits and falls back to `src/server/analyzeTemplates.ts` |
+| Causal trade-off synthesis (`Overview`, `Why not indoor plants?`, `Under-₹500 sealing tips`, `Kids & elders today`, `Best commute & mask plan`, `Cooking fumes & exhaust`) | `src/server/gemini.ts` + `src/server/guard.ts` | Natural-language reasoning grounded in regime (`combustion`/`mixed`/`dust`), profile, and active toggles; falls back to `gemini-3.5-flash` on transient 503s and `guardNumbers()` + `src/server/analyzeTemplates.ts` if needed |
 | Shareable English & Hindi Family/RWA Brief | `src/server/briefTemplates.ts` (`/api/brief`) | Deterministic bilingual output with 1-click Copy and WhatsApp share |
 
 ---
@@ -83,7 +83,7 @@ Full formulas and fixtures `F1–F11` are documented in [docs/ENGINE_SPEC.md](do
 |---|---|---|
 | Linter | `npm run lint` | Passed (`0` errors, `0` warnings) |
 | TypeScript | `npm run typecheck` | Passed (`tsc --noEmit`, `0` errors) |
-| Unit, Guard, API & A11y Tests | `npm test` | Passed (`6` test files, `59` tests including fixtures `F1–F11`, `guardNumbers()`, rate limits, and `vitest-axe`) |
+| Unit, Guard, API & A11y Tests | `npm test` | Passed (`6` test files, `61` tests including fixtures `F1–F11`, `guardNumbers()`, Gemini 503 fallback, rate limits, and `vitest-axe`) |
 | Production Build | `npm run build` | Passed (Next.js `16.4.6` Turbopack) |
 | Client Bundle Secret Scan | CI `grep` on `.next/static` | Clean (`0` leaked key patterns) |
 

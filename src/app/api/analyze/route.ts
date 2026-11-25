@@ -73,6 +73,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const result = await generateCausalAnalysis(parsed.data);
-  setCachedAnalysis(cacheKey, result);
+  if (result.source === 'gemini') {
+    setCachedAnalysis(cacheKey, result);
+  }
   return NextResponse.json(result);
 }

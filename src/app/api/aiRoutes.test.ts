@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { clearAnalyzeCacheForTest } from '@/server/cache';
+import { buildAnalyzeCacheKey, clearAnalyzeCacheForTest, getCachedAnalysis } from '@/server/cache';
 import { resetRateLimitsForTest } from '@/server/rateLimit';
+import { AnalyzeRequestSchema } from '@/shared/schemas';
 import { POST as postAnalyze, maxDuration as analyzeMaxDuration } from './analyze/route';
 import { POST as postBrief } from './brief/route';
 
@@ -54,7 +55,7 @@ describe('/api/analyze and /api/brief routes', () => {
     expect(analyzeMaxDuration).toBe(15);
   });
 
-  it('POST /api/analyze returns template fallback cleanly when GEMINI_API_KEY is unset', async () => {
+  it('POST /api/analyze returns template fallback cleanly and does not poison cache', async () => {
     vi.stubEnv('GEMINI_API_KEY', '');
     const req = new NextRequest('http://localhost/api/analyze', {
       method: 'POST',
@@ -66,6 +67,9 @@ describe('/api/analyze and /api/brief routes', () => {
     const body = await res.json();
     expect(body.source).toBe('template');
     expect(body.headlineReason).toBeTruthy();
+
+    const parsed = AnalyzeRequestSchema.parse(VALID_ANALYZE_BODY);
+    expect(getCachedAnalysis(buildAnalyzeCacheKey(parsed))).toBeNull();
   });
 
   it('POST /api/analyze enforces 4 KB cap (413) and schema validation (400)', async () => {

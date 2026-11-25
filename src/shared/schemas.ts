@@ -67,6 +67,8 @@ export const AnalyzeQuestionSchema = z.enum([
   'why_not_plants',
   'budget_sealing',
   'sensitive_member',
+  'commute_mask',
+  'cooking_impact',
 ]);
 
 export const AnalyzeRequestSchema = z.object({
