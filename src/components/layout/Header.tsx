@@ -4,7 +4,11 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { ActiveLocation } from '@/hooks/useAirQuality';
 import { formatMinutesAgo } from '@/lib/formatters';
 import { CITY_PRESETS } from '@/lib/presets';
-import { GeocodeResponseSchema, type AirQualityResponse, type GeocodeResult } from '@/shared/schemas';
+import {
+  GeocodeResponseSchema,
+  type AirQualityResponse,
+  type GeocodeResult,
+} from '@/shared/schemas';
 
 export interface HeaderProps {
   readonly location: ActiveLocation;
@@ -57,9 +61,7 @@ export function Header({
           setResults(parsed.results);
           setDropdownOpen(true);
           if (parsed.results.length === 0) {
-            setSearchMessage(
-              'City not found in India. Try one of the preset cities above.',
-            );
+            setSearchMessage('City not found in India. Try one of the preset cities above.');
           }
         } catch (err: unknown) {
           if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -111,7 +113,11 @@ export function Header({
     setQuery('');
     setSearchMessage(null);
     onSelectLocation({
-      key: item.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 32) || 'custom',
+      key:
+        item.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .slice(0, 32) || 'custom',
       name: item.admin1 ? `${item.name}, ${item.admin1}` : item.name,
       lat: item.lat,
       lon: item.lon,

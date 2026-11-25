@@ -27,7 +27,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ results });
   } catch {
     return NextResponse.json(
-      { error: { code: 'UPSTREAM_ERROR', message: 'Unable to fetch city search results right now.' } },
+      {
+        error: {
+          code: 'UPSTREAM_ERROR',
+          message: 'Unable to fetch city search results right now.',
+        },
+      },
       { status: 502 },
     );
   }

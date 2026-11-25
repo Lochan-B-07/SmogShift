@@ -123,7 +123,11 @@ export function stepIndoorConcentration(params: StepParams): StepResult {
 }
 
 export function simulateIndoorSeries(
-  steps: readonly { readonly pm25: number; readonly isAiring: boolean; readonly isCooking: boolean }[],
+  steps: readonly {
+    readonly pm25: number;
+    readonly isAiring: boolean;
+    readonly isCooking: boolean;
+  }[],
   config: IndoorConfig,
 ): readonly number[] {
   if (steps.length === 0) return [];

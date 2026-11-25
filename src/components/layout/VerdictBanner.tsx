@@ -72,9 +72,10 @@ export function VerdictBanner({
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-700">
         <span>
-          Source fingerprint (heuristic): <strong className="capitalize">{fingerprint.regime}</strong>
-          {fingerprint.ratio !== null ? ` (PM2.5/PM10 ≈ ${fingerprint.ratio.toFixed(2)})` : ''} · NO2:{' '}
-          <strong className="capitalize">{fingerprint.no2Level}</strong>
+          Source fingerprint (heuristic):{' '}
+          <strong className="capitalize">{fingerprint.regime}</strong>
+          {fingerprint.ratio !== null ? ` (PM2.5/PM10 ≈ ${fingerprint.ratio.toFixed(2)})` : ''} ·
+          NO2: <strong className="capitalize">{fingerprint.no2Level}</strong>
         </span>
         <span className="text-zinc-600">
           Assumes non-commute hours are spent at home; workplace/school indoor air is not modeled.

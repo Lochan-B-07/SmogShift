@@ -17,9 +17,7 @@ export interface VentilationWindowResult {
   readonly spanHours: readonly number[];
 }
 
-export function selectVentilationWindow(
-  hours: readonly ResolvedHour[],
-): VentilationWindowResult {
+export function selectVentilationWindow(hours: readonly ResolvedHour[]): VentilationWindowResult {
   if (hours.length === 0) {
     throw new Error('Cannot select ventilation window from empty hour list');
   }

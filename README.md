@@ -13,12 +13,12 @@ A mobile-first urban air-quality what-if simulator that turns live hourly $\text
 
 | Challenge 6 Requirement | Feature | Primary Source Files |
 |---|---|---|
-| Personalized recommendations (location, household, lifestyle) | Household profile drawer (enums), city chips/search/geolocation, profile-aware Gemini card & quick-question chips | `src/components/ProfileDrawer.tsx`, `src/components/CausalCard.tsx`, `src/server/gemini.ts` |
-| Low-emission daily routines | Travel toggle (`solo_car` / `carpool` / `metro_walk`), Smart Timing toggle, RWA scale slider (`1 / 25 / 100 / 200`) | `src/engine/emissions.ts`, `src/components/ToggleGroup.tsx`, `src/components/MeterCards.tsx` |
-| Indoor air quality hacks | Indoor defense toggle (`seal_exhaust` / `diy_box` / `hepa`), CADR/ACH comparison drawer, cooking profile | `src/engine/indoorModel.ts`, `src/engine/cadr.ts`, `src/components/CadrDrawer.tsx` |
+| Personalized recommendations (location, household, lifestyle) | Household profile drawer (enums), city chips/search/geolocation, profile-aware Gemini card & quick-question chips | `src/components/drawers/ProfileDrawer.tsx`, `src/components/controls/CausalCard.tsx`, `src/server/gemini.ts` |
+| Low-emission daily routines | Travel toggle (`solo_car` / `carpool` / `metro_walk`), Smart Timing toggle, RWA scale slider (`1 / 25 / 100 / 200`) | `src/engine/emissions.ts`, `src/components/controls/ToggleGroup.tsx`, `src/components/controls/MeterCards.tsx` |
+| Indoor air quality hacks | Indoor defense toggle (`seal_exhaust` / `diy_box` / `hepa`), CADR/ACH comparison drawer, cooking profile | `src/engine/indoorModel.ts`, `src/engine/cadr.ts`, `src/components/drawers/CadrDrawer.tsx` |
 | Real-time data integration | Open-Meteo Air Quality hourly (modeled) proxy with `revalidate: 900` and labeled static ES fallback | `src/server/openMeteo.ts`, `src/server/fallback.ts`, `src/app/api/air-quality/route.ts` |
-| User-friendly location UX | Preset city chips, debounced Indian city search, on-click `"Use my location"` | `src/components/Header.tsx`, `src/app/api/geocode/route.ts` |
-| Justification of action | Grounded `CausalCard` + 4 enum quick-question chips, `AssumptionsModal`, `docs/ENGINE_SPEC.md` | `src/components/CausalCard.tsx`, `src/components/AssumptionsModal.tsx`, `docs/ENGINE_SPEC.md` |
+| User-friendly location UX | Preset city chips, debounced Indian city search, on-click `"Use my location"` | `src/components/layout/Header.tsx`, `src/app/api/geocode/route.ts` |
+| Justification of action | Grounded `CausalCard` + 4 enum quick-question chips, `AssumptionsModal`, `docs/ENGINE_SPEC.md` | `src/components/controls/CausalCard.tsx`, `src/components/drawers/AssumptionsModal.tsx`, `docs/ENGINE_SPEC.md` |
 
 ---
 
@@ -53,7 +53,7 @@ flowchart LR
 
 ## Methodology, Constants & Limitations
 
-Full formulas and fixtures `F1–F11` are documented in [docs/ENGINE_SPEC.md](docs/ENGINE_SPEC.md) and inside the app's **Assumptions & methodology** modal (`src/components/AssumptionsModal.tsx`).
+Full formulas and fixtures `F1–F11` are documented in [docs/ENGINE_SPEC.md](docs/ENGINE_SPEC.md) and inside the app's **Assumptions & methodology** modal (`src/components/drawers/AssumptionsModal.tsx`).
 
 * **What we explicitly do NOT model:** Workplace/school indoor air quality (non-commute hours assume home), in-vehicle cabin exposure, breathing-rate/exertion dose, medical diagnosis, or boundary-layer feedbacks from individual household travel choices.
 * **Modeled data vs. ground sensors:** Open-Meteo provides Copernicus CAMS regional forecasts (~45 km grid outside Europe), labeled `"Modeled forecast"` in-app—not street-level CPCB sensor measurements. Offline snapshots are labeled `"Offline snapshot from {date}. Not live data."`
@@ -83,7 +83,7 @@ Full formulas and fixtures `F1–F11` are documented in [docs/ENGINE_SPEC.md](do
 |---|---|---|
 | Linter | `npm run lint` | Passed (`0` errors, `0` warnings) |
 | TypeScript | `npm run typecheck` | Passed (`tsc --noEmit`, `0` errors) |
-| Unit, Guard, API & A11y Tests | `npm test` | Passed (`7` test files, `58` tests including fixtures `F1–F11`, `guardNumbers()`, rate limits, and `vitest-axe`) |
+| Unit, Guard, API & A11y Tests | `npm test` | Passed (`6` test files, `57` tests including fixtures `F1–F11`, `guardNumbers()`, rate limits, and `vitest-axe`) |
 | Production Build | `npm run build` | Passed (Next.js `16.4.6` Turbopack) |
 | Client Bundle Secret Scan | CI `grep` on `.next/static` | Clean (`0` leaked key patterns) |
 

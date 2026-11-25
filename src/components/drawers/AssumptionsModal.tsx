@@ -35,21 +35,30 @@ const CONSTANT_ROWS = [
   ['Cigarette equivalence', CIGARETTE_EQUIVALENCE],
   ['Penetration factor P', PENETRATION_P],
   ['Deposition rate k', DEPOSITION_K],
-  ['Air exchange (closed / sealed / airing)', {
-    value: `${LAMBDA_CLOSED.value} / ${LAMBDA_SEALED.value} / ${LAMBDA_AIRING.value}`,
-    unit: 'h^-1',
-    source: LAMBDA_CLOSED.source,
-  }],
-  ['CADR (HEPA / DIY box / plants)', {
-    value: `${CADR_HEPA.value} / ${CADR_DIY_BOX.value} / ${CADR_PLANTS.value}`,
-    unit: 'm^3/h',
-    source: `${CADR_HEPA.source}; ${CADR_DIY_BOX.source}`,
-  }],
-  ['Cooking source S (gas / exhaust / induction)', {
-    value: `${COOKING_S_GAS_NO_EXHAUST.value} / ${COOKING_S_GAS_EXHAUST.value} / ${COOKING_S_INDUCTION.value}`,
-    unit: 'ug/h',
-    source: COOKING_S_GAS_NO_EXHAUST.source,
-  }],
+  [
+    'Air exchange (closed / sealed / airing)',
+    {
+      value: `${LAMBDA_CLOSED.value} / ${LAMBDA_SEALED.value} / ${LAMBDA_AIRING.value}`,
+      unit: 'h^-1',
+      source: LAMBDA_CLOSED.source,
+    },
+  ],
+  [
+    'CADR (HEPA / DIY box / plants)',
+    {
+      value: `${CADR_HEPA.value} / ${CADR_DIY_BOX.value} / ${CADR_PLANTS.value}`,
+      unit: 'm^3/h',
+      source: `${CADR_HEPA.source}; ${CADR_DIY_BOX.source}`,
+    },
+  ],
+  [
+    'Cooking source S (gas / exhaust / induction)',
+    {
+      value: `${COOKING_S_GAS_NO_EXHAUST.value} / ${COOKING_S_GAS_EXHAUST.value} / ${COOKING_S_INDUCTION.value}`,
+      unit: 'ug/h',
+      source: COOKING_S_GAS_NO_EXHAUST.source,
+    },
+  ],
   ['Carpool occupancy', CARPOOL_OCCUPANCY],
   ['Petrol car CO2e (<1400 cc)', PETROL_CAR_CO2E_G_KM],
   ['Petrol car NOx', PETROL_CAR_NOX_G_KM],
@@ -69,8 +78,8 @@ export function AssumptionsModal({ open, onOpenChange }: AssumptionsModalProps):
         <div>
           <h3 className="font-semibold text-zinc-900">Modeled forecast vs. ground monitors</h3>
           <p className="mt-1">
-            Hourly air-quality forecasts come from Open-Meteo (Copernicus CAMS ~45 km global
-            model). They are indicative regional forecasts—not street-level CPCB sensor readings.
+            Hourly air-quality forecasts come from Open-Meteo (Copernicus CAMS ~45 km global model).
+            They are indicative regional forecasts—not street-level CPCB sensor readings.
           </p>
         </div>
 

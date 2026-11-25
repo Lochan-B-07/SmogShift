@@ -54,6 +54,11 @@
 - What I had to correct (include real bugs/failures): Improved two literal Hindi phrases in `briefTemplates.ts` (`अनुमानित उदाहरण` and `सामान्य स्थिति`); browser subagent could not attach because local Chrome remote debugging (`DevToolsActivePort`) was not active, so live verification covered all 5 deployed Vercel API routes via HTTP and full `vitest-axe`/RTL suite locally.
 - Artifacts kept: `session5_implementation_plan.md`, `session5_walkthrough.md`.
 
+### 2026-11-25 — Repo Organization & Formatting Polish
+- Asked: Arrange and structure the repository files more cleanly and professionally.
+- Agent produced: Grouped `src/components/` into domain folders (`layout/`, `chart/`, `controls/`, `drawers/`), removed the redundant M0 `src/app/smoke.test.ts` placeholder, formatted `src/` and `scripts/` consistently with Prettier, and updated `README.md` paths and test counts (`6` files, `57` tests).
+- What I had to correct (include real bugs/failures): None.
+
 ## Key lessons
 1. Locking the physics engine (`docs/ENGINE_SPEC.md`) and hand-computed fixtures (`F1–F11`) before touching UI or Gemini prevented silent formula drift and made `simulateDay()` deterministic in `< 1 ms`.
 2. Domain-aware numeric guarding (`guardNumbers()` stripping `PM2.5`, `N95`, `CO2e`, `₹500` before digit checking) eliminates false rejections while catching hallucinated percentages or clock times.

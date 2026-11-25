@@ -178,7 +178,9 @@ describe('Hero UI, interactions, and WCAG accessibility', () => {
 
     await user.click(screen.getByRole('button', { name: 'Use my location' }));
     expect(
-      await screen.findByText(/Location permission denied\. Preset cities and search remain active\./i),
+      await screen.findByText(
+        /Location permission denied\. Preset cities and search remain active\./i,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Lucknow' })).toBeEnabled();
   });
@@ -208,17 +210,25 @@ describe('Hero UI, interactions, and WCAG accessibility', () => {
     // Assumptions modal
     await user.click(screen.getByRole('button', { name: /Assumptions & methodology/i }));
     const assumptionsDialog = await screen.findByRole('dialog');
-    expect(within(assumptionsDialog).getByText(/What we explicitly do NOT model/i)).toBeInTheDocument();
+    expect(
+      within(assumptionsDialog).getByText(/What we explicitly do NOT model/i),
+    ).toBeInTheDocument();
   });
 
   it('supports small-town search and shows inline City not found message', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : input.toString();
       if (url.startsWith('/api/air-quality')) {
-        return new Response(JSON.stringify({ ...delhiSnapshot, source: { ...delhiSnapshot.source, isFallback: false } }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({
+            ...delhiSnapshot,
+            source: { ...delhiSnapshot.source, isFallback: false },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
       if (url.startsWith('/api/geocode')) {
         if (url.includes('Zzzzz')) {

@@ -22,7 +22,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: { code: 'INVALID_QUERY', message: 'Valid lat (-90..90) and lon (-180..180) are required.' } },
+      {
+        error: {
+          code: 'INVALID_QUERY',
+          message: 'Valid lat (-90..90) and lon (-180..180) are required.',
+        },
+      },
       { status: 400 },
     );
   }

@@ -2,11 +2,7 @@
 
 import * as RadixToggleGroup from '@radix-ui/react-toggle-group';
 import type { ReactElement } from 'react';
-import {
-  describeIndoorDefense,
-  describeTravelMode,
-  formatClockHour,
-} from '@/lib/formatters';
+import { describeIndoorDefense, describeTravelMode, formatClockHour } from '@/lib/formatters';
 import type { Toggles } from '@/shared/schemas';
 
 export interface ToggleGroupProps {

@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AnalyzeQuestion, AnalyzeRequest } from '@/shared/schemas';
 import { buildTemplateAnalysis } from './analyzeTemplates';
 import { buildBrief } from './briefTemplates';
-import { buildAnalyzeCacheKey, clearAnalyzeCacheForTest, getCachedAnalysis, setCachedAnalysis } from './cache';
+import {
+  buildAnalyzeCacheKey,
+  clearAnalyzeCacheForTest,
+  getCachedAnalysis,
+  setCachedAnalysis,
+} from './cache';
 import { generateCausalAnalysis } from './gemini';
 import { guardAnalyzeResponseFields, guardNumbers } from './guard';
 import { resetRateLimitsForTest } from './rateLimit';

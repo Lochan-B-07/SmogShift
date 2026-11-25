@@ -65,7 +65,10 @@ describe('Fallback snapshots and Open-Meteo client', () => {
     expect(roundCoord(28.6139)).toBe('28.61');
     expect(buildAirQualityUrl(28.6139, 77.209)).toContain('latitude=28.61&longitude=77.21');
 
-    const mockHours = Array.from({ length: 24 }, (_, h) => `2026-11-25T${String(h).padStart(2, '0')}:00`);
+    const mockHours = Array.from(
+      { length: 24 },
+      (_, h) => `2026-11-25T${String(h).padStart(2, '0')}:00`,
+    );
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({

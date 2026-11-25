@@ -1,10 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { formatClockHour } from '@/lib/formatters';
-import {
-  AnalyzeResponseSchema,
-  type AnalyzeRequest,
-  type AnalyzeResponse,
-} from '@/shared/schemas';
+import { AnalyzeResponseSchema, type AnalyzeRequest, type AnalyzeResponse } from '@/shared/schemas';
 import { buildTemplateAnalysis } from './analyzeTemplates';
 import { guardAnalyzeResponseFields } from './guard';
 import { consumeGeminiDailyQuota } from './rateLimit';
@@ -43,7 +39,10 @@ export interface GeminiDependencies {
   readonly generateText?: (req: AnalyzeRequest, signal: AbortSignal) => Promise<string | undefined>;
 }
 
-async function callGeminiSdk(req: AnalyzeRequest, signal: AbortSignal): Promise<string | undefined> {
+async function callGeminiSdk(
+  req: AnalyzeRequest,
+  signal: AbortSignal,
+): Promise<string | undefined> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return undefined;
 

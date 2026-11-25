@@ -102,18 +102,8 @@ export const BriefResponseSchema = z.object({
 });
 
 export const AirQualityQuerySchema = z.object({
-  lat: z
-    .string()
-    .trim()
-    .min(1)
-    .transform(Number)
-    .pipe(z.number().finite().min(-90).max(90)),
-  lon: z
-    .string()
-    .trim()
-    .min(1)
-    .transform(Number)
-    .pipe(z.number().finite().min(-180).max(180)),
+  lat: z.string().trim().min(1).transform(Number).pipe(z.number().finite().min(-90).max(90)),
+  lon: z.string().trim().min(1).transform(Number).pipe(z.number().finite().min(-180).max(180)),
   name: z.string().trim().min(1).max(80).optional(),
 });
 

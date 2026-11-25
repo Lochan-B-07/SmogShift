@@ -23,7 +23,8 @@ export function buildTemplateAnalysis(req: AnalyzeRequest): AnalyzeResponse {
         toggles.indoor === 'none'
           ? 'Switch Indoor Defense to draft sealing + kitchen exhaust or a DIY filter box.'
           : 'Keep your active indoor defense running during peak evening smog hours.',
-      caveat: 'Indoor filtration estimates assume doors and windows stay closed outside airing hours.',
+      caveat:
+        'Indoor filtration estimates assume doors and windows stay closed outside airing hours.',
       source: 'template',
     };
   }
@@ -42,7 +43,8 @@ export function buildTemplateAnalysis(req: AnalyzeRequest): AnalyzeResponse {
         `Concentrate cross-ventilation into a brief burst around ${bestClock} instead of leaving windows ajar all day.`,
       ],
       nextMove: 'Seal the largest window or door draft gap with foam tape or rolled cloth first.',
-      caveat: 'Tightly sealing rooms without filtration means indoor cooking fumes linger longer if unvented.',
+      caveat:
+        'Tightly sealing rooms without filtration means indoor cooking fumes linger longer if unvented.',
       source: 'template',
     };
   }
@@ -79,7 +81,8 @@ export function buildTemplateAnalysis(req: AnalyzeRequest): AnalyzeResponse {
         'Sharing rides or taking metro/walk still cuts daily community tailpipe emissions.',
       ],
       nextMove: `Air out rooms freely around ${bestClock} and keep commuting low-emission.`,
-      caveat: 'Modeled forecasts reflect regional averages (~45 km grid) rather than roadside monitors.',
+      caveat:
+        'Modeled forecasts reflect regional averages (~45 km grid) rather than roadside monitors.',
       source: 'template',
     };
   }
@@ -112,7 +115,8 @@ export function buildTemplateAnalysis(req: AnalyzeRequest): AnalyzeResponse {
       'Travel choices shift community tailpipe emissions rather than your personal indoor curve.',
     ],
     nextMove,
-    caveat: 'Forecasts are modeled regional estimates, not ground-sensor readings or medical advice.',
+    caveat:
+      'Forecasts are modeled regional estimates, not ground-sensor readings or medical advice.',
     source: 'template',
   };
 }

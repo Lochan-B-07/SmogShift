@@ -21,7 +21,10 @@ export interface BriefDrawerProps {
 }
 
 function sanitizeCityName(raw: string): string {
-  const cleaned = raw.replace(/[^a-zA-Z0-9\p{L} ,.'-]/gu, ' ').replace(/\s+/g, ' ').trim();
+  const cleaned = raw
+    .replace(/[^a-zA-Z0-9\p{L} ,.'-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   return (cleaned || 'Your location').slice(0, 60);
 }
 

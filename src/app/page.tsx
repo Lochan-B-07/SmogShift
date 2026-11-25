@@ -1,17 +1,17 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
-import { AssumptionsModal } from '@/components/AssumptionsModal';
-import { BriefDrawer } from '@/components/BriefDrawer';
-import { CadrDrawer } from '@/components/CadrDrawer';
-import { CausalCard } from '@/components/CausalCard';
-import { ExposureChart } from '@/components/ExposureChart';
-import { Header } from '@/components/Header';
-import { HourlyTable } from '@/components/HourlyTable';
-import { MeterCards } from '@/components/MeterCards';
-import { ProfileDrawer } from '@/components/ProfileDrawer';
-import { ToggleGroup } from '@/components/ToggleGroup';
-import { VerdictBanner } from '@/components/VerdictBanner';
+import { ExposureChart } from '@/components/chart/ExposureChart';
+import { HourlyTable } from '@/components/chart/HourlyTable';
+import { CausalCard } from '@/components/controls/CausalCard';
+import { MeterCards } from '@/components/controls/MeterCards';
+import { ToggleGroup } from '@/components/controls/ToggleGroup';
+import { AssumptionsModal } from '@/components/drawers/AssumptionsModal';
+import { BriefDrawer } from '@/components/drawers/BriefDrawer';
+import { CadrDrawer } from '@/components/drawers/CadrDrawer';
+import { ProfileDrawer } from '@/components/drawers/ProfileDrawer';
+import { Header } from '@/components/layout/Header';
+import { VerdictBanner } from '@/components/layout/VerdictBanner';
 import { useAirQuality, type ActiveLocation } from '@/hooks/useAirQuality';
 import { useAnalyze } from '@/hooks/useAnalyze';
 import { useSimulation } from '@/hooks/useSimulation';
@@ -138,9 +138,7 @@ export default function Home(): ReactElement {
               summary={simulation.summary}
               adjustedMean24={simulation.adjustedMeters.mean24}
               households={toggles.households}
-              onHouseholdsChange={(households) =>
-                setToggles((prev) => ({ ...prev, households }))
-              }
+              onHouseholdsChange={(households) => setToggles((prev) => ({ ...prev, households }))}
             />
 
             <CausalCard
@@ -158,11 +156,7 @@ export default function Home(): ReactElement {
               onChange={setProfile}
             />
 
-            <CadrDrawer
-              open={cadrOpen}
-              onOpenChange={setCadrOpen}
-              roomSize={profile.roomSize}
-            />
+            <CadrDrawer open={cadrOpen} onOpenChange={setCadrOpen} roomSize={profile.roomSize} />
 
             <BriefDrawer
               open={briefOpen}

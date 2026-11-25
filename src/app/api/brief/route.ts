@@ -10,7 +10,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const limit = checkRateLimit('brief', ip, 10);
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: { code: 'RATE_LIMITED', message: 'Too many brief requests. Please wait a minute.' } },
+      {
+        error: { code: 'RATE_LIMITED', message: 'Too many brief requests. Please wait a minute.' },
+      },
       { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
     );
   }

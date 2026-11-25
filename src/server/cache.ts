@@ -15,10 +15,7 @@ export function buildAnalyzeCacheKey(req: AnalyzeRequest): string {
   return createHash('sha256').update(JSON.stringify(req)).digest('hex');
 }
 
-export function getCachedAnalysis(
-  key: string,
-  nowMs: number = Date.now(),
-): AnalyzeResponse | null {
+export function getCachedAnalysis(key: string, nowMs: number = Date.now()): AnalyzeResponse | null {
   const entry = store.get(key);
   if (!entry) return null;
 

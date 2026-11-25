@@ -1,10 +1,5 @@
 export type CpcbBandKey =
-  | 'good'
-  | 'satisfactory'
-  | 'moderately_polluted'
-  | 'poor'
-  | 'very_poor'
-  | 'severe';
+  'good' | 'satisfactory' | 'moderately_polluted' | 'poor' | 'very_poor' | 'severe';
 
 export interface CpcbCategory {
   readonly band: CpcbBandKey;
