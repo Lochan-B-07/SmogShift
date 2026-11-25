@@ -19,7 +19,7 @@
 ## Session entries (append one per milestone)
 ### 2026-11-25 — M0
 - Asked: Analyze Challenge 6 reference guide and implementation spec, then set up the repository foundation (M0) and provide GitHub setup instructions.
-- Agent produced: Organized `docs/IMPLEMENTATION.md`, `docs/ENGINE_SPEC.md`, `docs/COMPETITION_GUIDE.md`, `AGENTS.md`, `PROMPT_LOG.md`, `.gitignore`, `.env.example`, Next.js 16 App Router TypeScript/Tailwind/ESLint skeleton, dependency installation, `eslint.config.mjs` boundary rules, `next.config.ts` security headers, `.github/workflows/ci.yml`, Vitest setup with smoke test, and local git initialization.
+- Agent produced: Organized `docs/IMPLEMENTATION.md`, `docs/ENGINE_SPEC.md`, `docs/COMPETITION_GUIDE.md`, `AGENTS.md`, `PROMPT_LOG.md`, `.gitignore`, `.env.example`, Next.js 16 App Router TypeScript/Tailwind/ESLint skeleton, dependency installation, `eslint.config.mjs` boundary rules, `next.config.ts` security headers, `.github/workflows/ci.yml`, `.prettierrc`, starter `README.md`, clean M0 `src/app/page.tsx` (removed unused template SVGs), Vitest setup with smoke test, and local git initialization.
 - What I had to correct (include real bugs/failures): Upgraded `@types/node` from `^20` to `^22` so `vitest@5` peer dependencies resolved cleanly; replaced `LayoutProps<"/">` in `src/app/layout.tsx` with explicit `Readonly<{ children: ReactNode }>: ReactElement` so `tsc --noEmit` passes in clean CI checkouts before `next build`; switched `vitest.config.ts` to `vitest.config.mts` with `import.meta.dirname` to eliminate Vite CJS/ESM config warnings; added `*.tsbuildinfo` to `.gitignore`.
 - Artifacts kept: `AGENTS.md`, `docs/IMPLEMENTATION.md`, `docs/ENGINE_SPEC.md`, `PROMPT_LOG.md`.
 
