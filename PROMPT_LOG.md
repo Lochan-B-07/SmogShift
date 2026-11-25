@@ -30,6 +30,12 @@
 - What I had to correct (include real bugs/failures): None.
 - Artifacts kept: `scripts/capture-fallback.ts`, `src/data/fallback/*.json`.
 
+### 2026-11-25 — Session 2 (M2 + M3: Pure Engine & Data Routes)
+- Asked: Implement `src/shared/schemas.ts`, pure exposure/emissions engine (`src/engine/*`) verified against fixtures F1–F11 + property tests, and cached/rate-limited data routes (`/api/air-quality`, `/api/geocode`, `/api/health`).
+- Agent produced: Full Zod schemas in `src/shared/schemas.ts`, modular pure engine (`constants.ts`, `category.ts`, `fingerprint.ts`, `routine.ts`, `ventilationWindow.ts`, `indoorModel.ts`, `cadr.ts`, `emissions.ts`, `exposure.ts`, `index.ts`) with fixtures & 18 engine tests, plus `src/server/{rateLimit,fallback,openMeteo}.ts` and `/api/{air-quality,geocode,health}/route.ts` with 11 server/API tests.
+- What I had to correct (include real bugs/failures): Verified `AirQualityQuerySchema` rejects empty `?lat=` rather than coercing `""` to `0`; kept `process.env` reads isolated to `src/server/rateLimit.ts`.
+- Artifacts kept: `session2_implementation_plan.md`, `session2_walkthrough.md`.
+
 ## Key lessons
 1.
 2.
