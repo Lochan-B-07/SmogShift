@@ -119,7 +119,11 @@ function getLocalHourIsoPrefix(timezone: string, now: Date): string {
   return `${get('year')}-${get('month')}-${get('day')}T${hour}:00`;
 }
 
-function getRolling24Hours(hours: readonly NormalizedHour[], timezone: string, now: Date): NormalizedHour[] {
+function getRolling24Hours(
+  hours: readonly NormalizedHour[],
+  timezone: string,
+  now: Date,
+): NormalizedHour[] {
   const prefix = getLocalHourIsoPrefix(timezone, now);
   const startIdx = hours.findIndex((h) => h.time >= prefix);
   const safeStart = startIdx >= 0 && startIdx + 24 <= hours.length ? startIdx : 0;
