@@ -59,6 +59,7 @@ export default function Home(): ReactElement {
       <Header
         location={location}
         airQuality={data}
+        loading={loading}
         onSelectLocation={setLocation}
         onOpenProfile={() => setProfileOpen(true)}
         onOpenCadr={() => setCadrOpen(true)}
@@ -138,6 +139,7 @@ export default function Home(): ReactElement {
               summary={simulation.summary}
               adjustedMean24={simulation.adjustedMeters.mean24}
               households={toggles.households}
+              travel={toggles.travel}
               onHouseholdsChange={(households) => setToggles((prev) => ({ ...prev, households }))}
             />
 

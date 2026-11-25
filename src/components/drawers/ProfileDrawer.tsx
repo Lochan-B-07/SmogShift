@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactElement } from 'react';
+import { DEFAULT_PROFILE } from '@/lib/presets';
 import type { HouseholdProfile } from '@/shared/schemas';
 import { DrawerShell } from './DrawerShell';
 
@@ -130,6 +131,16 @@ export function ProfileDrawer({
             ))}
           </div>
         </fieldset>
+
+        <div className="border-t border-zinc-200 pt-3">
+          <button
+            type="button"
+            onClick={() => onChange(DEFAULT_PROFILE)}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 font-semibold text-zinc-800 hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
+          >
+            Reset to defaults
+          </button>
+        </div>
       </div>
     </DrawerShell>
   );

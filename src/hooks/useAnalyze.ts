@@ -33,15 +33,18 @@ export function useAnalyze(params: UseAnalyzeParams): UseAnalyzeResult {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const prevQuestionRef = useRef<AnalyzeQuestion>(params.question);
+  const prevCityRef = useRef<string>(params.cityKey);
 
   useEffect(() => {
     if (!params.enabled || !params.fingerprint || !params.engine) {
       return;
     }
 
-    const questionChanged = prevQuestionRef.current !== params.question;
+    const immediate =
+      prevQuestionRef.current !== params.question || prevCityRef.current !== params.cityKey;
     prevQuestionRef.current = params.question;
-    const delayMs = questionChanged ? 0 : 600;
+    prevCityRef.current = params.cityKey;
+    const delayMs = immediate ? 0 : 600;
 
     const controller = new AbortController();
     let active = true;

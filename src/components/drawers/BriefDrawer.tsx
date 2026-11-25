@@ -40,7 +40,7 @@ export function BriefDrawer({
   const [briefText, setBriefText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<boolean>(false);
+  const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   useEffect(() => {
     if (!open) return;
@@ -51,7 +51,7 @@ export function BriefDrawer({
     async function loadBrief(): Promise<void> {
       setLoading(true);
       setError(null);
-      setCopied(false);
+      setCopied('idle');
 
       const payload: BriefRequest = {
         lang,
@@ -93,9 +93,18 @@ export function BriefDrawer({
   }, [open, lang, cityName, profile, toggles, engine]);
 
   async function handleCopy(): Promise<void> {
-    if (!briefText || typeof navigator === 'undefined' || !navigator.clipboard) return;
-    await navigator.clipboard.writeText(briefText);
-    setCopied(true);
+    if (!briefText) return;
+    try {
+      if (typeof navigator === 'undefined' || !navigator.clipboard) {
+        setCopied('failed');
+        return;
+      }
+      await navigator.clipboard.writeText(briefText);
+      setCopied('copied');
+      setTimeout(() => setCopied('idle'), 2500);
+    } catch {
+      setCopied('failed');
+    }
   }
 
   return (
@@ -153,7 +162,11 @@ export function BriefDrawer({
             disabled={!briefText}
             className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 font-semibold text-zinc-900 hover:bg-zinc-100 disabled:opacity-50 focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
           >
-            {copied ? 'Copied!' : 'Copy text'}
+            {copied === 'copied'
+              ? 'Copied!'
+              : copied === 'failed'
+                ? 'Copy failed — select text above'
+                : 'Copy text'}
           </button>
           <a
             href={`https://wa.me/?text=${encodeURIComponent(briefText)}`}

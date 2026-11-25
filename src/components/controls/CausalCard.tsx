@@ -33,11 +33,18 @@ export function CausalCard({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-zinc-900">Why these choices work</h2>
-        {analysis ? (
-          <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800">
-            {analysis.source === 'template' ? 'Rule-based explanation' : 'Gemini causal summary'}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {loading && analysis ? (
+            <span className="text-xs font-medium text-teal-800" role="status">
+              Updating...
+            </span>
+          ) : null}
+          {analysis ? (
+            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800">
+              {analysis.source === 'template' ? 'Rule-based explanation' : 'Gemini causal summary'}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div role="group" aria-label="Ask a follow-up question" className="mt-3 flex flex-wrap gap-2">

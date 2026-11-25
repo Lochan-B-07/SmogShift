@@ -1,11 +1,13 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
+import { getBestWindowBounds } from '@/components/chart/ExposureChartInner';
 import bengaluruSnapshot from '@/data/fallback/bengaluru.json';
 import delhiSnapshot from '@/data/fallback/delhi.json';
+import type { HourlySimulationPoint } from '@/engine';
 import Home from './page';
 
 vi.mock('recharts', async () => {
@@ -42,9 +44,15 @@ function setupFetchMock(options?: { readonly isFallback?: boolean }): ReturnType
     }
 
     if (url.startsWith('/api/geocode')) {
+      if (url.includes('Zzzzz')) {
+        return new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
       return new Response(
         JSON.stringify({
-          results: [{ name: 'Jaipur', admin1: 'Rajasthan', lat: 26.91, lon: 75.79 }],
+          results: [{ name: 'Udaipur', admin1: 'Rajasthan', lat: 24.58, lon: 73.68 }],
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       );
@@ -91,7 +99,7 @@ function setupFetchMock(options?: { readonly isFallback?: boolean }): ReturnType
   return fetchMock;
 }
 
-describe('Hero UI, interactions, and WCAG accessibility', () => {
+describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => {
   beforeEach(() => {
     vi.stubGlobal('ResizeObserver', MockResizeObserver);
   });
@@ -102,29 +110,76 @@ describe('Hero UI, interactions, and WCAG accessibility', () => {
     vi.restoreAllMocks();
   });
 
-  it('loads Delhi NCR, updates meters when toggles flip, renders HourlyTable, and passes vitest-axe', async () => {
+  it('loads Delhi NCR, updates meters across toggles/slider/SmartTiming, renders 24 HourlyTable rows, and passes vitest-axe', async () => {
     setupFetchMock();
     const user = userEvent.setup();
     const { container } = render(<Home />);
 
     await screen.findByText(/Modeled forecast · Open-Meteo/i);
-    expect(screen.getByText(/Hourly exposure data table/i)).toBeInTheDocument();
 
-    const householdSection = screen.getByLabelText('Exposure and community meters');
-    const beforeText = householdSection.textContent ?? '';
+    const table = screen.getByRole('table', { hidden: true });
+    const rows = within(table).getAllByRole('row', { hidden: true });
+    expect(rows.length).toBe(25); // 1 header row + 24 hourly rows
+
+    const metersSection = screen.getByLabelText('Exposure and community meters');
+    expect(within(metersSection).getByText(/Switch Daily Travel to Carpool/i)).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Households participating' })).toHaveAttribute(
+      'aria-valuetext',
+      '25 households',
+    );
 
     await user.click(screen.getByRole('radio', { name: 'HEPA' }));
     await user.click(screen.getByRole('radio', { name: 'Metro + Walk' }));
+    await user.click(screen.getByRole('switch', { name: 'Toggle smart timing' }));
+    expect(screen.getByRole('switch', { name: 'Toggle smart timing' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+
+    await user.click(within(metersSection).getByRole('button', { name: '100' }));
 
     await waitFor(() => {
-      const afterText = householdSection.textContent ?? '';
-      expect(afterText).not.toBe(beforeText);
-      expect(afterText).toContain('kg');
-      expect(afterText).toContain('g');
+      const text = metersSection.textContent ?? '';
+      expect(text).toContain('100 households');
+      expect(text).not.toContain('Switch Daily Travel to Carpool');
     });
 
     const axeResults = await axe(container);
     expect(axeResults.violations).toEqual([]);
+  });
+
+  it('ensures chart best-window shading always spans non-zero width even for a 1-hour window', () => {
+    const makePoints = (bestIdx: number): HourlySimulationPoint[] =>
+      Array.from({ length: 24 }, (_, idx) => ({
+        time: `2026-11-25T${String(idx).padStart(2, '0')}:00`,
+        hourOfDay: idx,
+        outdoorPm25: 100,
+        baselineIndoorPm25: 80,
+        adjustedIndoorPm25: 50,
+        baselineExposure: 80,
+        adjustedExposure: 50,
+        baselineActivity: 'home_indoors',
+        adjustedActivity: 'home_indoors',
+        isBestWindow: idx === bestIdx,
+      }));
+
+    const midPts = makePoints(14);
+    const midData = midPts.map((p) => ({
+      clock: p.time.slice(11, 16),
+      outdoor: p.outdoorPm25,
+      baseline: p.baselineExposure,
+      adjusted: p.adjustedExposure,
+    }));
+    expect(getBestWindowBounds(midPts, midData)).toEqual({ x1: '14:00', x2: '15:00' });
+
+    const endPts = makePoints(23);
+    const endData = endPts.map((p) => ({
+      clock: p.time.slice(11, 16),
+      outdoor: p.outdoorPm25,
+      baseline: p.baselineExposure,
+      adjusted: p.adjustedExposure,
+    }));
+    expect(getBestWindowBounds(endPts, endData)).toEqual({ x1: '22:00', x2: '23:00' });
   });
 
   it('fetches question-specific explanation when clicking quick-question chip', async () => {
@@ -153,6 +208,48 @@ describe('Hero UI, interactions, and WCAG accessibility', () => {
     render(<Home />);
 
     await screen.findByText(/Offline snapshot from .* Not live data\./i);
+  });
+
+  it('handles air-quality fetch errors and recovers cleanly via Retry button', async () => {
+    let failFirst = true;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url.startsWith('/api/air-quality')) {
+          if (failFirst) {
+            failFirst = false;
+            return new Response('Server error', { status: 500 });
+          }
+          return new Response(
+            JSON.stringify({
+              ...delhiSnapshot,
+              source: { ...delhiSnapshot.source, isFallback: false },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            headlineReason: 'Recovered explanation.',
+            tradeoffs: ['One.'],
+            nextMove: 'Move.',
+            caveat: 'Caveat.',
+            source: 'template',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<Home />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/Unable to load air-quality forecast/i);
+
+    await user.click(within(alert).getByRole('button', { name: 'Retry' }));
+    await screen.findByText(/Modeled forecast · Open-Meteo/i);
   });
 
   it('handles denied geolocation gracefully while keeping preset chips active', async () => {
@@ -185,26 +282,59 @@ describe('Hero UI, interactions, and WCAG accessibility', () => {
     expect(screen.getByRole('button', { name: 'Lucknow' })).toBeEnabled();
   });
 
-  it('opens Profile, CADR, Brief (EN/HI with lang="hi"), and Assumptions drawers cleanly', async () => {
+  it('opens Profile (with Reset), CADR, Brief (EN/HI + copy fallback), and Assumptions drawers cleanly with 0 axe violations', async () => {
     setupFetchMock();
     const user = userEvent.setup();
     render(<Home />);
 
     await screen.findByText(/Modeled forecast · Open-Meteo/i);
 
+    // Profile drawer + Reset
+    await user.click(screen.getByRole('button', { name: 'Profile' }));
+    const profileDialog = await screen.findByRole('dialog');
+    await user.click(within(profileDialog).getByRole('button', { name: 'Induction' }));
+    expect(within(profileDialog).getByRole('button', { name: 'Induction' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await user.click(within(profileDialog).getByRole('button', { name: 'Reset to defaults' }));
+    expect(within(profileDialog).getByRole('button', { name: 'Gas (no exhaust)' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect((await axe(profileDialog)).violations).toEqual([]);
+    await user.click(
+      within(profileDialog).getByRole('button', { name: /Close Household Profile/i }),
+    );
+
     // CADR drawer
-    await user.click(screen.getByRole('button', { name: 'CADR / ACH Check' }));
+    await user.click(screen.getByRole('button', { name: 'CADR Check' }));
     const cadrDialog = await screen.findByRole('dialog');
     expect(within(cadrDialog).getByText(/Indoor Potted Plants/i)).toBeInTheDocument();
     await user.click(within(cadrDialog).getByRole('button', { name: /Close Room CADR/i }));
 
-    // Brief drawer + Hindi toggle
-    await user.click(screen.getByRole('button', { name: 'Family / RWA Brief' }));
+    // Brief drawer + Hindi toggle + clipboard handling
+    const writeTextMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Denied'))
+      .mockResolvedValueOnce(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: writeTextMock },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Share Brief' }));
     const briefDialog = await screen.findByRole('dialog');
     await within(briefDialog).findByText(/Smog brief — Delhi NCR/i);
+    await user.click(within(briefDialog).getByRole('button', { name: 'Copy text' }));
+    await within(briefDialog).findByText(/Copy failed/i);
+    await user.click(within(briefDialog).getByRole('button', { name: /Copy failed/i }));
+    await within(briefDialog).findByText('Copied!');
+
     await user.click(within(briefDialog).getByRole('button', { name: /हिन्दी/i }));
     const hiPre = await within(briefDialog).findByText(/स्मॉग संक्षिप्त नोट/i);
     expect(hiPre).toHaveAttribute('lang', 'hi');
+    expect((await axe(briefDialog)).violations).toEqual([]);
     await user.click(within(briefDialog).getByRole('button', { name: /Close Family/i }));
 
     // Assumptions modal
@@ -215,51 +345,8 @@ describe('Hero UI, interactions, and WCAG accessibility', () => {
     ).toBeInTheDocument();
   });
 
-  it('supports small-town search and shows inline City not found message', async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? input : input.toString();
-      if (url.startsWith('/api/air-quality')) {
-        return new Response(
-          JSON.stringify({
-            ...delhiSnapshot,
-            source: { ...delhiSnapshot.source, isFallback: false },
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          },
-        );
-      }
-      if (url.startsWith('/api/geocode')) {
-        if (url.includes('Zzzzz')) {
-          return new Response(JSON.stringify({ results: [] }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-        return new Response(
-          JSON.stringify({
-            results: [{ name: 'Udaipur', admin1: 'Rajasthan', lat: 24.58, lon: 73.68 }],
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        );
-      }
-      if (url.startsWith('/api/analyze')) {
-        return new Response(
-          JSON.stringify({
-            headlineReason: 'Overview explanation.',
-            tradeoffs: ['Tradeoff 1.'],
-            nextMove: 'Next move.',
-            caveat: 'Modeled estimates only.',
-            source: 'template',
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        );
-      }
-      return new Response('{}', { status: 404 });
-    });
-    vi.stubGlobal('fetch', fetchMock);
-
+  it('supports small-town search, closes dropdown on outside click, and shows City not found', async () => {
+    setupFetchMock();
     const user = userEvent.setup();
     render(<Home />);
     await screen.findByText(/Modeled forecast · Open-Meteo/i);
@@ -267,6 +354,12 @@ describe('Hero UI, interactions, and WCAG accessibility', () => {
     const searchInput = screen.getByPlaceholderText(/Search Indian town or city/i);
     await user.type(searchInput, 'Zzzzz');
     await screen.findByText(/City not found in India/i);
+
+    // Outside click dismisses dropdown
+    fireEvent.pointerDown(document.body);
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: 'City search results' })).not.toBeInTheDocument();
+    });
 
     await user.clear(searchInput);
     await user.type(searchInput, 'Udaipur');

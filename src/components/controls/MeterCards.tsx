@@ -10,6 +10,7 @@ export interface MeterCardsProps {
   readonly summary: EngineSummary;
   readonly adjustedMean24: number;
   readonly households: Toggles['households'];
+  readonly travel: Toggles['travel'];
   readonly onHouseholdsChange: (households: Toggles['households']) => void;
 }
 
@@ -19,6 +20,7 @@ export function MeterCards({
   summary,
   adjustedMean24,
   households,
+  travel,
   onHouseholdsChange,
 }: MeterCardsProps): ReactElement {
   const currentStepIndex = Math.max(0, RWA_STEPS.indexOf(households));
@@ -91,6 +93,12 @@ export function MeterCards({
               </div>
             </div>
 
+            {travel === 'solo_car' ? (
+              <p className="mt-2 text-xs font-medium text-amber-900">
+                Switch Daily Travel to Carpool or Metro + Walk to see society emission savings.
+              </p>
+            ) : null}
+
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs font-medium text-zinc-800">
                 <label id="rwa-slider-label">RWA society scale</label>
@@ -114,12 +122,25 @@ export function MeterCards({
                 </Slider.Track>
                 <Slider.Thumb
                   aria-label="Households participating"
-                  className="block h-4 w-4 rounded-full border-2 border-teal-800 bg-white shadow focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
+                  aria-valuetext={`${households} households`}
+                  className="block h-5 w-5 rounded-full border-2 border-teal-800 bg-white shadow focus:outline-2 focus:outline-offset-2 focus:outline-teal-800"
                 />
               </Slider.Root>
-              <div className="flex justify-between text-[11px] text-zinc-600">
+              <div className="mt-1 grid grid-cols-4 gap-1 text-[11px]">
                 {RWA_STEPS.map((step) => (
-                  <span key={step}>{step}</span>
+                  <button
+                    key={step}
+                    type="button"
+                    aria-pressed={households === step}
+                    onClick={() => onHouseholdsChange(step)}
+                    className={`rounded py-0.5 font-medium transition focus:outline-2 focus:outline-offset-1 focus:outline-teal-800 ${
+                      households === step
+                        ? 'bg-teal-100 font-bold text-teal-900'
+                        : 'text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    {step}
+                  </button>
                 ))}
               </div>
             </div>

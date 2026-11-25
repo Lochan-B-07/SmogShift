@@ -59,6 +59,11 @@
 - Agent produced: Grouped `src/components/` into domain folders (`layout/`, `chart/`, `controls/`, `drawers/`), removed the redundant M0 `src/app/smoke.test.ts` placeholder, formatted `src/` and `scripts/` consistently with Prettier, and updated `README.md` paths and test counts (`6` files, `57` tests).
 - What I had to correct (include real bugs/failures): None.
 
+### 2026-11-25 — UI/UX Hard Audit & DOM Stress Testing
+- Asked: Audit the entire UI/DOM for edge-case bugs and UX flaws, refactor rough interactions, and expand DOM/accessibility tests.
+- Agent produced: Fixed 0-width single-hour `ReferenceArea` bug and Y-axis/ReferenceLine label clipping in `ExposureChartInner.tsx`; made `Header.tsx` compact on 375 px mobile with outside-click dropdown dismissal and refresh indicator; triggered `useAnalyze.ts` immediately on city switch; added clickable RWA scale buttons + `aria-valuetext` + solo-car helper in `MeterCards.tsx`; added clipboard fallback error state in `BriefDrawer.tsx`, `Reset to defaults` in `ProfileDrawer.tsx`, min/max summary in `HourlyTable.tsx`, and `Updating...` indicator in `CausalCard.tsx`; expanded `src/app/ui.test.tsx` to 9 comprehensive DOM/`vitest-axe` tests (`59` total tests).
+- What I had to correct (include real bugs/failures): Caught that a 1-hour best window produced `x1 === x2` in Recharts `ReferenceArea` (invisible highlight) and that `YAxis unit` + `insideLeft` label overlapped on narrow screens.
+
 ## Key lessons
 1. Locking the physics engine (`docs/ENGINE_SPEC.md`) and hand-computed fixtures (`F1–F11`) before touching UI or Gemini prevented silent formula drift and made `simulateDay()` deterministic in `< 1 ms`.
 2. Domain-aware numeric guarding (`guardNumbers()` stripping `PM2.5`, `N95`, `CO2e`, `₹500` before digit checking) eliminates false rejections while catching hallucinated percentages or clock times.

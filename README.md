@@ -83,7 +83,7 @@ Full formulas and fixtures `F1–F11` are documented in [docs/ENGINE_SPEC.md](do
 |---|---|---|
 | Linter | `npm run lint` | Passed (`0` errors, `0` warnings) |
 | TypeScript | `npm run typecheck` | Passed (`tsc --noEmit`, `0` errors) |
-| Unit, Guard, API & A11y Tests | `npm test` | Passed (`6` test files, `57` tests including fixtures `F1–F11`, `guardNumbers()`, rate limits, and `vitest-axe`) |
+| Unit, Guard, API & A11y Tests | `npm test` | Passed (`6` test files, `59` tests including fixtures `F1–F11`, `guardNumbers()`, rate limits, and `vitest-axe`) |
 | Production Build | `npm run build` | Passed (Next.js `16.4.6` Turbopack) |
 | Client Bundle Secret Scan | CI `grep` on `.next/static` | Clean (`0` leaked key patterns) |
 

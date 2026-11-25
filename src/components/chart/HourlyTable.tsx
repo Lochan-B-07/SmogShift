@@ -9,10 +9,15 @@ export interface HourlyTableProps {
 }
 
 export function HourlyTable({ points }: HourlyTableProps): ReactElement {
+  const outdoorVals = points.map((p) => p.outdoorPm25);
+  const minOutdoor = outdoorVals.length > 0 ? Math.min(...outdoorVals) : 0;
+  const maxOutdoor = outdoorVals.length > 0 ? Math.max(...outdoorVals) : 0;
+
   return (
     <details className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
       <summary className="cursor-pointer text-sm font-semibold text-zinc-900 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700">
-        Hourly exposure data table (24 hours)
+        Hourly exposure data table ({points.length}h · outdoor {minOutdoor.toFixed(0)}–
+        {maxOutdoor.toFixed(0)} µg/m³)
       </summary>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full border-collapse text-left text-xs text-zinc-800">

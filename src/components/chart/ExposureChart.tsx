@@ -41,7 +41,7 @@ export function ExposureChart({
     >
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="exposure-chart-heading" className="text-base font-semibold text-zinc-900">
-          24-Hour Personal Exposure Curve
+          24-Hour Personal Exposure Curve (µg/m³)
         </h2>
         <p className="text-xs text-zinc-600">
           Lines differ by dash pattern &amp; color · Shaded span = best window

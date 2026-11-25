@@ -27,6 +27,28 @@ interface ChartDatum {
   readonly adjusted: number;
 }
 
+export function getBestWindowBounds(
+  points: readonly HourlySimulationPoint[],
+  data: readonly ChartDatum[],
+): { readonly x1: string; readonly x2: string } | null {
+  const bestIndices = points.map((p, idx) => (p.isBestWindow ? idx : -1)).filter((idx) => idx >= 0);
+
+  if (bestIndices.length === 0 || data.length < 2) return null;
+
+  const firstIdx = bestIndices[0];
+  const lastIdx = bestIndices[bestIndices.length - 1];
+
+  // Ensure non-zero width when only a single hour qualifies
+  if (firstIdx === lastIdx) {
+    if (lastIdx + 1 < data.length) {
+      return { x1: data[firstIdx].clock, x2: data[lastIdx + 1].clock };
+    }
+    return { x1: data[firstIdx - 1].clock, x2: data[lastIdx].clock };
+  }
+
+  return { x1: data[firstIdx].clock, x2: data[lastIdx].clock };
+}
+
 export function ExposureChartInner({ points }: ExposureChartInnerProps): ReactElement {
   const data: ChartDatum[] = points.map((p) => ({
     clock: formatIsoClock(p.time),
@@ -35,54 +57,55 @@ export function ExposureChartInner({ points }: ExposureChartInnerProps): ReactEl
     adjusted: Math.round(p.adjustedExposure * 10) / 10,
   }));
 
-  const bestSpan = points
-    .map((p, idx) => (p.isBestWindow ? data[idx]?.clock : null))
-    .filter((v): v is string => v !== null);
-  const x1 = bestSpan[0];
-  const x2 = bestSpan[bestSpan.length - 1];
+  const bounds = getBestWindowBounds(points, data);
 
   return (
-    <div className="h-72 w-full">
+    <div className="h-64 w-full sm:h-72">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
+        <LineChart data={data} margin={{ top: 16, right: 12, left: -12, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
-          <XAxis dataKey="clock" tick={{ fontSize: 11 }} interval={3} />
-          <YAxis
-            unit=" µg"
-            tick={{ fontSize: 11 }}
-            width={52}
-            label={{
-              value: 'PM2.5 (µg/m³)',
-              angle: -90,
-              position: 'insideLeft',
-              style: { fontSize: 11, fill: '#52525b' },
-            }}
-          />
+          <XAxis dataKey="clock" tick={{ fontSize: 11, fill: '#3f3f46' }} interval={3} />
+          <YAxis tick={{ fontSize: 11, fill: '#3f3f46' }} width={44} />
           <Tooltip
             formatter={(value) => [`${String(value ?? '')} µg/m³`]}
             labelFormatter={(label) => `Local time: ${String(label ?? '')}`}
           />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          {x1 && x2 ? (
+          <Legend wrapperStyle={{ fontSize: 12, paddingTop: 4 }} />
+          {bounds ? (
             <ReferenceArea
-              x1={x1}
-              x2={x2}
+              x1={bounds.x1}
+              x2={bounds.x2}
               fill="#0d9488"
-              fillOpacity={0.12}
-              label={{ value: 'Best window', position: 'insideTop', fontSize: 10, fill: '#0f766e' }}
+              fillOpacity={0.14}
+              label={{
+                value: 'Best window',
+                position: 'insideTop',
+                fontSize: 10,
+                fill: '#0f766e',
+              }}
             />
           ) : null}
           <ReferenceLine
             y={15}
             stroke="#0284c7"
             strokeDasharray="2 2"
-            label={{ value: 'WHO 15', position: 'right', fontSize: 10, fill: '#0284c7' }}
+            label={{
+              value: 'WHO 15',
+              position: 'insideTopRight',
+              fontSize: 10,
+              fill: '#0369a1',
+            }}
           />
           <ReferenceLine
             y={60}
             stroke="#b45309"
             strokeDasharray="2 2"
-            label={{ value: 'CPCB 60', position: 'right', fontSize: 10, fill: '#b45309' }}
+            label={{
+              value: 'CPCB 60',
+              position: 'insideTopRight',
+              fontSize: 10,
+              fill: '#92400e',
+            }}
           />
           <Line
             type="monotone"
