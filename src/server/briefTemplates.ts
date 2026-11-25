@@ -27,7 +27,7 @@ function describeTravelEn(travel: BriefRequest['toggles']['travel']): string {
 function describeIndoorHi(indoor: BriefRequest['toggles']['indoor']): string {
   switch (indoor) {
     case 'none':
-      return 'घर के अंदर धुएं से बचाव रखें';
+      return 'सामान्य स्थिति (अतिरिक्त फ़िल्टर नहीं)';
     case 'seal_exhaust':
       return 'दरवाजे-खिड़कियों की दरारें बंद करें और रसोई में एग्जॉस्ट चलाएं';
     case 'diy_box':
@@ -80,7 +80,7 @@ export function buildBrief(req: BriefRequest): BriefResponse {
       `स्मॉग संक्षिप्त नोट — ${req.cityName} (${dateStr})`,
       `बाहर निकलने या घर की हवा बदलने का सबसे साफ़ समय: ${req.bestHourClock} (${describeLabelHi(req.engine.bestHourLabel)})।`,
       `घरेलू योजना: ${describeIndoorHi(req.toggles.indoor)}; ${describeTravelHi(req.toggles.travel)}।`,
-      `यदि हमारी सोसाइटी के ${req.toggles.households} परिवार यह बदलाव करें: लगभग ${co2e} किग्रा CO2e और ${nox} ग्राम NOx प्रतिदिन कम होगा (उदाहरण के लिए)।`,
+      `यदि हमारी सोसाइटी के ${req.toggles.households} परिवार यह बदलाव करें: लगभग ${co2e} किग्रा CO2e और ${nox} ग्राम NOx प्रतिदिन कम होगा (अनुमानित उदाहरण)।`,
       `डेटा: Open-Meteo मॉडल पूर्वानुमान (ज़मीनी सेंसर नहीं)।`,
     ].join('\n');
     return { text, lang: 'hi' };

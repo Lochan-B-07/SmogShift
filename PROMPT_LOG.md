@@ -48,7 +48,13 @@
 - What I had to correct (include real bugs/failures): Sanitized parentheses in `"Your location (lat, lon)"` before sending `cityName` to `/api/brief` so `BriefRequestSchema` regex does not reject geolocated briefs; fixed ESLint `react-hooks/set-state-in-effect` and `jsx-a11y/role-supports-aria-props` in `Header.tsx`; moved `role="img"` + `aria-label` in `ExposureChart.tsx` from `<section>` to an inner `<div>` after `vitest-axe` flagged `aria-allowed-role`.
 - Artifacts kept: `session4_implementation_plan.md`, `session4_walkthrough.md`.
 
+### 2026-11-25 — Session 5 (M8 + M9 + M10: Hardening, Live API Smoke & Final Docs)
+- Asked: Audit §16 & §13.2 edge states, verify the live Vercel deployment (`https://smog-shift.vercel.app/`), finalize `README.md` and `PROMPT_LOG.md`, and prepare Stage 3 LinkedIn submission draft.
+- Agent produced: Edge-state tests in `src/app/ui.test.tsx` (small-town search, city-not-found, `clean_day`, `least_bad`), refined Hindi brief phrasing in `src/server/briefTemplates.ts`, live Vercel API smoke checks (`/api/health`, `/api/air-quality`, `/api/geocode`, `/api/analyze`, `/api/brief`), finalized `README.md` with real measured results, and Stage 3 LinkedIn draft in `session5_walkthrough.md`.
+- What I had to correct (include real bugs/failures): Improved two literal Hindi phrases in `briefTemplates.ts` (`अनुमानित उदाहरण` and `सामान्य स्थिति`); browser subagent could not attach because local Chrome remote debugging (`DevToolsActivePort`) was not active, so live verification covered all 5 deployed Vercel API routes via HTTP and full `vitest-axe`/RTL suite locally.
+- Artifacts kept: `session5_implementation_plan.md`, `session5_walkthrough.md`.
+
 ## Key lessons
-1.
-2.
-3.
+1. Locking the physics engine (`docs/ENGINE_SPEC.md`) and hand-computed fixtures (`F1–F11`) before touching UI or Gemini prevented silent formula drift and made `simulateDay()` deterministic in `< 1 ms`.
+2. Domain-aware numeric guarding (`guardNumbers()` stripping `PM2.5`, `N95`, `CO2e`, `₹500` before digit checking) eliminates false rejections while catching hallucinated percentages or clock times.
+3. Static ES imports for fallback JSONs (`src/server/fallback.ts`), `revalidate: 900` with rounded coordinates, and `vitest-axe` automated checks catch real deployment and accessibility issues before submission.

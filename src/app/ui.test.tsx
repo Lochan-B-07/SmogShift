@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
+import bengaluruSnapshot from '@/data/fallback/bengaluru.json';
 import delhiSnapshot from '@/data/fallback/delhi.json';
 import Home from './page';
 
@@ -208,5 +209,104 @@ describe('Hero UI, interactions, and WCAG accessibility', () => {
     await user.click(screen.getByRole('button', { name: /Assumptions & methodology/i }));
     const assumptionsDialog = await screen.findByRole('dialog');
     expect(within(assumptionsDialog).getByText(/What we explicitly do NOT model/i)).toBeInTheDocument();
+  });
+
+  it('supports small-town search and shows inline City not found message', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.startsWith('/api/air-quality')) {
+        return new Response(JSON.stringify({ ...delhiSnapshot, source: { ...delhiSnapshot.source, isFallback: false } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.startsWith('/api/geocode')) {
+        if (url.includes('Zzzzz')) {
+          return new Response(JSON.stringify({ results: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(
+          JSON.stringify({
+            results: [{ name: 'Udaipur', admin1: 'Rajasthan', lat: 24.58, lon: 73.68 }],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.startsWith('/api/analyze')) {
+        return new Response(
+          JSON.stringify({
+            headlineReason: 'Overview explanation.',
+            tradeoffs: ['Tradeoff 1.'],
+            nextMove: 'Next move.',
+            caveat: 'Modeled estimates only.',
+            source: 'template',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('{}', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const user = userEvent.setup();
+    render(<Home />);
+    await screen.findByText(/Modeled forecast · Open-Meteo/i);
+
+    const searchInput = screen.getByPlaceholderText(/Search Indian town or city/i);
+    await user.type(searchInput, 'Zzzzz');
+    await screen.findByText(/City not found in India/i);
+
+    await user.clear(searchInput);
+    await user.type(searchInput, 'Udaipur');
+    const resultBtn = await screen.findByRole('button', { name: /Udaipur/i });
+    await user.click(resultBtn);
+    await screen.findByText(/Udaipur, Rajasthan/i);
+  });
+
+  it('renders clean_day verdict on low AQI snapshot and least_bad on hazardous snapshot', async () => {
+    let mode: 'clean' | 'hazardous' = 'clean';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url.startsWith('/api/air-quality')) {
+          const payload =
+            mode === 'clean'
+              ? { ...bengaluruSnapshot, source: { ...bengaluruSnapshot.source, isFallback: false } }
+              : {
+                  ...delhiSnapshot,
+                  source: { ...delhiSnapshot.source, isFallback: false },
+                  hours: delhiSnapshot.hours.map((h) => ({ ...h, pm25: 190, pm10: 250 })),
+                };
+          return new Response(JSON.stringify(payload), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        if (url.startsWith('/api/analyze')) {
+          return new Response(
+            JSON.stringify({
+              headlineReason: 'Explanation.',
+              tradeoffs: ['One.'],
+              nextMove: 'Move.',
+              caveat: 'Caveat.',
+              source: 'template',
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          );
+        }
+        return new Response('{}', { status: 404 });
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<Home />);
+    await screen.findByText(/Clean air day — best airing hour is/i);
+
+    mode = 'hazardous';
+    await user.click(screen.getByRole('button', { name: 'Lucknow' }));
+    await screen.findByText(/No safe window today\. Least-bad hour is/i);
   });
 });
