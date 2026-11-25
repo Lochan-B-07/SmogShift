@@ -36,6 +36,12 @@
 - What I had to correct (include real bugs/failures): Verified `AirQualityQuerySchema` rejects empty `?lat=` rather than coercing `""` to `0`; kept `process.env` reads isolated to `src/server/rateLimit.ts`.
 - Artifacts kept: `session2_implementation_plan.md`, `session2_walkthrough.md`.
 
+### 2026-11-25 — Session 3 (M4 + M5: Vertical Slice & Guarded Gemini)
+- Asked: Implement the vertical-slice UI (city chips, dynamically imported `ExposureChart`, `HourlyTable`, toggles, Household meter) plus `/api/analyze` (`maxDuration = 15`), `/api/brief`, LRU cache, domain-aware `guardNumbers()`, deterministic templates, and `useAnalyze`.
+- Agent produced: `src/lib/{presets,formatters}.ts`, `src/hooks/{useAirQuality,useSimulation,useAnalyze}.ts`, `src/components/{ExposureChart,ExposureChartInner,HourlyTable}.tsx`, vertical-slice `src/app/page.tsx`, `src/server/{cache,guard,analyzeTemplates,briefTemplates,gemini}.ts`, `/api/{analyze,brief}/route.ts`, and 15 new tests in `src/server/ai.test.ts` + `src/app/api/aiRoutes.test.ts`.
+- What I had to correct (include real bugs/failures): Updated `guardNumbers` domain token regex so `₹500` matches cleanly without requiring a word boundary `\b` before the non-ASCII rupee symbol `₹`.
+- Artifacts kept: `session3_implementation_plan.md`, `session3_walkthrough.md`.
+
 ## Key lessons
 1.
 2.
