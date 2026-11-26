@@ -84,6 +84,11 @@
 - Agent produced: Scoped sticky header to `sm:sticky` so `375px` mobile viewports are not blocked while scrolling (`Header.tsx`), replaced misleading total-reduction `%` under Smart Timing with `Active · Shifted to HH:00` (`ToggleGroup.tsx`), added `stale` tracking in `useAnalyze.ts` + inline `"Settings updated"` banner & highlighted `Explain this plan` button in `CausalCard.tsx`, improved `RoomCheckDrawer.tsx` sample fallback handling and file input reset, and verified with `ui.test.tsx`.
 - What I had to correct (include real bugs/failures): Caught that `sticky top-0` on mobile consumed ~260 px of vertical screen space and that Smart Timing displayed total combined reduction `%` rather than its own effect.
 
+### 2026-11-26 — 4-Tab Product Workspace Refactor
+- Asked: Replace the generic single-page vertical scroll with a structured tabbed workspace where each core feature lives in its own tab.
+- Agent produced: Built WAI-ARIA compliant `WorkspaceTabs.tsx` (`My Day`, `Simulator`, `AI Advisor`, `Room Audit`) with keyboard arrow/Home/End navigation and live status badges (`Ready`, `Update`), extracted reusable `RoomCheckPanel.tsx` with `useId()` for unique form IDs across both the `Room Audit` tab and `RoomCheckDrawer.tsx`, kept `ImpactSummaryBar` + `VerdictBanner` persistent above the tabs, and expanded `ui.test.tsx` to `14` tests (`67` total).
+- What I had to correct (include real bugs/failures): Used `useId()` in `RoomCheckPanel.tsx` to prevent duplicate `id="room-photo-upload"` violations when both the `Room Audit` tab and `RoomCheckDrawer` exist in the component tree.
+
 ## Key lessons
 1. Locking the physics engine (`docs/ENGINE_SPEC.md`) and hand-computed fixtures (`F1–F11`) before touching UI or Gemini prevented silent formula drift and made `simulateDay()` deterministic in `< 1 ms`.
 2. Domain-aware numeric guarding (`guardNumbers()` stripping `PM2.5`, `N95`, `CO2e`, `₹500` before digit checking) eliminates false rejections while catching hallucinated percentages or clock times.

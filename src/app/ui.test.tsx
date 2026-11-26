@@ -120,6 +120,8 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
 
     await screen.findByText(/Modeled forecast · Open-Meteo/i);
 
+    await user.click(screen.getByRole('tab', { name: /Simulator/i }));
+
     const table = screen.getByRole('table', { hidden: true });
     const rows = within(table).getAllByRole('row', { hidden: true });
     expect(rows.length).toBe(25); // 1 header row + 24 hourly rows
@@ -191,6 +193,8 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     render(<Home />);
 
     await screen.findByText(/Modeled forecast · Open-Meteo/i);
+
+    await user.click(screen.getByRole('tab', { name: /AI Advisor/i }));
 
     await user.click(screen.getByRole('button', { name: 'Why not indoor plants?' }));
     await screen.findByText(/Explanation for why_not_plants/i);
@@ -448,18 +452,23 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     render(<Home />);
 
     await screen.findByText(/Modeled forecast · Open-Meteo/i);
+    await user.click(screen.getByRole('tab', { name: /AI Advisor/i }));
     await screen.findByText(/Explanation for overview/i);
 
     const initialAnalyzeCalls = fetchMock.mock.calls.filter(
       ([url]) => typeof url === 'string' && url.startsWith('/api/analyze'),
     ).length;
 
-    // Flipping a toggle should NOT auto-fire /api/analyze and should show stale notice
+    // Switch to Simulator, flip a toggle -> should NOT auto-fire /api/analyze
+    await user.click(screen.getByRole('tab', { name: /Simulator/i }));
     await user.click(screen.getByRole('radio', { name: 'HEPA' }));
     const afterToggleAnalyzeCalls = fetchMock.mock.calls.filter(
       ([url]) => typeof url === 'string' && url.startsWith('/api/analyze'),
     ).length;
     expect(afterToggleAnalyzeCalls).toBe(initialAnalyzeCalls);
+
+    // Switch to AI Advisor -> shows stale notice, explicit trigger refreshes /api/analyze
+    await user.click(screen.getByRole('tab', { name: /AI Advisor/i }));
     expect(screen.getByText(/Settings updated — click/i)).toBeInTheDocument();
 
     // Explicit trigger button DOES fire /api/analyze and clears stale notice
@@ -472,7 +481,8 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
       expect(screen.queryByText(/Settings updated — click/i)).not.toBeInTheDocument();
     });
 
-    // Clicking a static example chip applies profile+toggles without calling /api/plan-day
+    // Switch to My Day and click a static example chip -> applies profile+toggles without calling /api/plan-day
+    await user.click(screen.getByRole('tab', { name: /My Day/i }));
     await user.click(screen.getByRole('button', { name: 'Elder + HEPA + induction' }));
     await screen.findByText(/Understood: Older adult · Induction cooker/i);
     expect(screen.getByText(/Today's Game Plan · Delhi NCR/i)).toBeInTheDocument();
@@ -524,9 +534,30 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
+    await user.click(screen.getByRole('tab', { name: /Simulator/i }));
     expect(screen.getByRole('radio', { name: 'Seal + Exhaust' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
+  });
+
+  it('supports keyboard arrow navigation across WorkspaceTabs and renders Room Audit tab cleanly', async () => {
+    setupFetchMock();
+    const user = userEvent.setup();
+    const { container } = render(<Home />);
+
+    await screen.findByText(/Modeled forecast · Open-Meteo/i);
+
+    const myDayTab = screen.getByRole('tab', { name: /My Day/i });
+    myDayTab.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: /Simulator/i })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+
+    await user.click(screen.getByRole('tab', { name: /Room Audit/i }));
+    expect(screen.getByText(/Check My Room \(Gemini Vision\)/i)).toBeInTheDocument();
+    expect((await axe(container)).violations).toEqual([]);
   });
 });

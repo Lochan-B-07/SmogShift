@@ -14,8 +14,14 @@ import { BriefDrawer } from '@/components/drawers/BriefDrawer';
 import { CadrDrawer } from '@/components/drawers/CadrDrawer';
 import { ProfileDrawer } from '@/components/drawers/ProfileDrawer';
 import { RoomCheckDrawer } from '@/components/drawers/RoomCheckDrawer';
+import { RoomCheckPanel } from '@/components/drawers/RoomCheckPanel';
 import { Header } from '@/components/layout/Header';
 import { VerdictBanner } from '@/components/layout/VerdictBanner';
+import {
+  WorkspaceTabs,
+  type WorkspaceTabId,
+  type WorkspaceTabItem,
+} from '@/components/layout/WorkspaceTabs';
 import { useAirQuality, type ActiveLocation } from '@/hooks/useAirQuality';
 import { useAnalyze } from '@/hooks/useAnalyze';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -116,7 +122,7 @@ function OnboardingCard(): ReactElement {
                 2
               </span>
               <span>
-                <strong>Describe your day</strong> — or tune the what-if controls to watch exposure
+                <strong>Describe your day</strong> — or tune the what-if simulator to watch exposure
                 drop in real time.
               </span>
             </li>
@@ -125,8 +131,8 @@ function OnboardingCard(): ReactElement {
                 3
               </span>
               <span>
-                <strong>Save your cleanest-air window</strong> — add a 1-tap calendar reminder or
-                share a Hindi/English brief.
+                <strong>Audit your room &amp; save reminders</strong> — spot stove/gap bottlenecks
+                and export a 1-tap calendar event.
               </span>
             </li>
           </ol>
@@ -150,6 +156,7 @@ export default function Home(): ReactElement {
   );
   const [customLocation, setCustomLocation] = useState<ActiveLocation | null>(null);
   const [urlOverridesDismissed, setUrlOverridesDismissed] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<WorkspaceTabId>('day');
 
   const search = useSyncExternalStore(subscribeNoop, getUrlSearchSnapshot, getServerSearchSnapshot);
   const urlOverrides = parseUrlOverrides(search, storedToggles);
@@ -249,6 +256,31 @@ export default function Home(): ReactElement {
 
   const hasData = Boolean(data && simulation && simulation.ok);
 
+  const workspaceTabs: readonly WorkspaceTabItem[] = [
+    {
+      id: 'day',
+      label: 'My Day',
+      subtitle: 'NL planner & game plan',
+      badge: planResult ? 'Ready' : undefined,
+    },
+    {
+      id: 'simulator',
+      label: 'Simulator',
+      subtitle: '24-h curve & toggles',
+    },
+    {
+      id: 'advisor',
+      label: 'AI Advisor',
+      subtitle: 'Causal Q&A',
+      badge: analyzeStale ? 'Update' : undefined,
+    },
+    {
+      id: 'room',
+      label: 'Room Audit',
+      subtitle: 'Vision photo check',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50/70 via-zinc-50 to-zinc-100 text-zinc-900 dark:from-teal-950/25 dark:via-zinc-950 dark:to-zinc-950 dark:text-zinc-100">
       <a
@@ -324,27 +356,6 @@ export default function Home(): ReactElement {
 
         {hasData && data && simulation && simulation.ok ? (
           <>
-            <DayPlannerInput
-              loading={planLoading}
-              error={planError}
-              textareaRef={plannerTextareaRef}
-              onSubmitText={(text) => void triggerPlanDay(text, location.key)}
-              onSelectExample={applyPlanExample}
-            />
-
-            {planResult ? (
-              <GamePlanCard
-                plan={planResult}
-                bestHour={simulation.summary.bestHour}
-                cityName={location.name}
-                onEdit={() => {
-                  resetPlanDay();
-                  plannerTextareaRef.current?.focus();
-                }}
-                onOpenBrief={() => setBriefOpen(true)}
-              />
-            ) : null}
-
             <ImpactSummaryBar summary={simulation.summary} toggles={toggles} />
 
             <VerdictBanner
@@ -354,49 +365,135 @@ export default function Home(): ReactElement {
               onOpenAssumptions={() => setAssumptionsOpen(true)}
             />
 
-            <ExposureChart
-              points={simulation.points}
-              baselinePctWho={simulation.summary.baselinePctWho}
-              adjustedPctWho={simulation.summary.adjustedPctWho}
-              bestHour={simulation.summary.bestHour}
-              isDark={theme === 'dark'}
+            <WorkspaceTabs
+              activeTab={activeTab}
+              tabs={workspaceTabs}
+              onSelectTab={setActiveTab}
             />
 
-            <HourlyTable points={simulation.points} />
+            {/* Tab 1: My Day (Concierge) */}
+            <div
+              role="tabpanel"
+              id="panel-day"
+              aria-labelledby="tab-day"
+              hidden={activeTab !== 'day'}
+              className="flex flex-col gap-4"
+            >
+              <DayPlannerInput
+                loading={planLoading}
+                error={planError}
+                textareaRef={plannerTextareaRef}
+                onSubmitText={(text) => void triggerPlanDay(text, location.key)}
+                onSelectExample={applyPlanExample}
+              />
 
-            <div className="pt-1">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-                See the math / Tweak it yourself
-              </p>
+              {planResult ? (
+                <GamePlanCard
+                  plan={planResult}
+                  bestHour={simulation.summary.bestHour}
+                  cityName={location.name}
+                  onEdit={() => {
+                    resetPlanDay();
+                    plannerTextareaRef.current?.focus();
+                  }}
+                  onOpenBrief={() => setBriefOpen(true)}
+                />
+              ) : null}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-zinc-200/90 bg-white/95 px-4 py-3 text-xs shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95">
+                <span className="text-zinc-700 dark:text-zinc-300">
+                  Want to inspect the 24-hour curve or fine-tune filter, travel, and RWA scale?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('simulator')}
+                  className="font-semibold text-teal-800 underline underline-offset-2 hover:text-teal-600 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
+                >
+                  Open Simulator →
+                </button>
+              </div>
+            </div>
+
+            {/* Tab 2: Simulator (24-h Curve, Table, Toggles & Meters) */}
+            <div
+              role="tabpanel"
+              id="panel-simulator"
+              aria-labelledby="tab-simulator"
+              hidden={activeTab !== 'simulator'}
+              className="flex flex-col gap-4"
+            >
               <ToggleGroup
                 toggles={toggles}
                 bestHour={simulation.summary.bestHour}
                 onChange={handleTogglesChange}
               />
+
+              <ExposureChart
+                points={simulation.points}
+                baselinePctWho={simulation.summary.baselinePctWho}
+                adjustedPctWho={simulation.summary.adjustedPctWho}
+                bestHour={simulation.summary.bestHour}
+                isDark={theme === 'dark'}
+              />
+
+              <HourlyTable points={simulation.points} />
+
+              <MeterCards
+                summary={simulation.summary}
+                adjustedMean24={simulation.adjustedMeters.mean24}
+                households={toggles.households}
+                travel={toggles.travel}
+                onHouseholdsChange={(households) =>
+                  handleTogglesChange({ ...toggles, households })
+                }
+              />
             </div>
 
-            <MeterCards
-              summary={simulation.summary}
-              adjustedMean24={simulation.adjustedMeters.mean24}
-              households={toggles.households}
-              travel={toggles.travel}
-              onHouseholdsChange={(households) =>
-                handleTogglesChange({ ...toggles, households })
-              }
-            />
+            {/* Tab 3: AI Advisor */}
+            <div
+              role="tabpanel"
+              id="panel-advisor"
+              aria-labelledby="tab-advisor"
+              hidden={activeTab !== 'advisor'}
+              className="flex flex-col gap-4"
+            >
+              <CausalCard
+                question={question}
+                analysis={analysis}
+                loading={analyzeLoading}
+                error={analyzeError}
+                stale={analyzeStale}
+                regime={data.fingerprint.regime}
+                profile={profile}
+                toggles={toggles}
+                onSelectQuestion={setQuestion}
+                onExplainPlan={() => setExplicitAnalyzeTrigger((n) => n + 1)}
+              />
+            </div>
 
-            <CausalCard
-              question={question}
-              analysis={analysis}
-              loading={analyzeLoading}
-              error={analyzeError}
-              stale={analyzeStale}
-              regime={data.fingerprint.regime}
-              profile={profile}
-              toggles={toggles}
-              onSelectQuestion={setQuestion}
-              onExplainPlan={() => setExplicitAnalyzeTrigger((n) => n + 1)}
-            />
+            {/* Tab 4: Room Audit (Vision) */}
+            <div
+              role="tabpanel"
+              id="panel-room"
+              aria-labelledby="tab-room"
+              hidden={activeTab !== 'room'}
+              className="rounded-2xl border border-zinc-200/90 bg-white/95 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95"
+            >
+              <div className="mb-3">
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+                  Check My Room (Gemini Vision)
+                </h2>
+                <p className="mt-0.5 text-xs text-zinc-700 dark:text-zinc-300">
+                  Spot stove exhaust or window-gap bottlenecks and auto-apply the cheapest fix to
+                  your simulator.
+                </p>
+              </div>
+              <RoomCheckPanel
+                cityKey={location.key}
+                onApplyIndoor={(indoor) => handleTogglesChange({ ...toggles, indoor })}
+                onAfterApply={() => setActiveTab('simulator')}
+              />
+            </div>
 
             <ProfileDrawer
               open={profileOpen}
