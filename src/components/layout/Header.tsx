@@ -20,6 +20,7 @@ export interface HeaderProps {
   readonly onSelectLocation: (loc: ActiveLocation) => void;
   readonly onOpenProfile: () => void;
   readonly onOpenCadr: () => void;
+  readonly onOpenRoomCheck: () => void;
   readonly onOpenBrief: () => void;
   readonly onCopyShareUrl: () => void;
   readonly shareCopied: boolean;
@@ -34,6 +35,7 @@ export function Header({
   onSelectLocation,
   onOpenProfile,
   onOpenCadr,
+  onOpenRoomCheck,
   onOpenBrief,
   onCopyShareUrl,
   shareCopied,
@@ -353,7 +355,7 @@ export function Header({
             ) : null}
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+          <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
             <button
               type="button"
               onClick={onOpenProfile}
@@ -369,6 +371,14 @@ export function Header({
               className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 sm:px-3"
             >
               CADR Check
+            </button>
+            <button
+              type="button"
+              onClick={onOpenRoomCheck}
+              title="Upload or test a room photo with Gemini Vision"
+              className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 sm:px-3"
+            >
+              Room Check
             </button>
             <button
               type="button"

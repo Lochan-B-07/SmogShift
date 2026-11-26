@@ -502,4 +502,29 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     expect(ics).toContain('SUMMARY:Open windows (14:00)');
     expect(ics).toContain('END:VCALENDAR');
   });
+
+  it('opens Room Check drawer, tests a sample room, and applies preset to simulator with 0 axe violations', async () => {
+    setupFetchMock();
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await screen.findByText(/Modeled forecast · Open-Meteo/i);
+
+    await user.click(screen.getByRole('button', { name: 'Room Check' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText(/Photos are resized in your browser/i)).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Gas stove (no exhaust)' }));
+    await within(dialog).findByText(/Bottlenecks detected/i);
+    expect((await axe(dialog)).violations).toEqual([]);
+
+    await user.click(within(dialog).getByRole('button', { name: 'Apply to simulator' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('radio', { name: 'Seal + Exhaust' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
 });

@@ -13,6 +13,7 @@ import { AssumptionsModal } from '@/components/drawers/AssumptionsModal';
 import { BriefDrawer } from '@/components/drawers/BriefDrawer';
 import { CadrDrawer } from '@/components/drawers/CadrDrawer';
 import { ProfileDrawer } from '@/components/drawers/ProfileDrawer';
+import { RoomCheckDrawer } from '@/components/drawers/RoomCheckDrawer';
 import { Header } from '@/components/layout/Header';
 import { VerdictBanner } from '@/components/layout/VerdictBanner';
 import { useAirQuality, type ActiveLocation } from '@/hooks/useAirQuality';
@@ -207,6 +208,7 @@ export default function Home(): ReactElement {
   const [explicitAnalyzeTrigger, setExplicitAnalyzeTrigger] = useState<number>(0);
   const [profileOpen, setProfileOpen] = useState<boolean>(false);
   const [cadrOpen, setCadrOpen] = useState<boolean>(false);
+  const [roomCheckOpen, setRoomCheckOpen] = useState<boolean>(false);
   const [briefOpen, setBriefOpen] = useState<boolean>(false);
   const [assumptionsOpen, setAssumptionsOpen] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
@@ -264,6 +266,7 @@ export default function Home(): ReactElement {
         onSelectLocation={handleSelectLocation}
         onOpenProfile={() => setProfileOpen(true)}
         onOpenCadr={() => setCadrOpen(true)}
+        onOpenRoomCheck={() => setRoomCheckOpen(true)}
         onOpenBrief={() => setBriefOpen(true)}
         onCopyShareUrl={handleCopyShareUrl}
         shareCopied={copied}
@@ -402,6 +405,13 @@ export default function Home(): ReactElement {
             />
 
             <CadrDrawer open={cadrOpen} onOpenChange={setCadrOpen} roomSize={profile.roomSize} />
+
+            <RoomCheckDrawer
+              open={roomCheckOpen}
+              onOpenChange={setRoomCheckOpen}
+              cityKey={location.key}
+              onApplyIndoor={(indoor) => handleTogglesChange({ ...toggles, indoor })}
+            />
 
             <BriefDrawer
               open={briefOpen}

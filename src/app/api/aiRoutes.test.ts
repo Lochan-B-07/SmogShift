@@ -6,6 +6,7 @@ import { AnalyzeRequestSchema } from '@/shared/schemas';
 import { POST as postAnalyze, maxDuration as analyzeMaxDuration } from './analyze/route';
 import { POST as postBrief } from './brief/route';
 import { POST as postPlanDay, maxDuration as planDayMaxDuration } from './plan-day/route';
+import { POST as postRoomCheck, maxDuration as roomCheckMaxDuration } from './room-check/route';
 
 const VALID_ANALYZE_BODY = {
   cityKey: 'delhi',
@@ -186,5 +187,43 @@ describe('/api/analyze and /api/brief routes', () => {
       }),
     });
     expect((await postPlanDay(rateLimitedReq)).status).toBe(429);
+  });
+
+  it('POST /api/room-check returns fallback cleanly, validates payload, and enforces 3/min rate limit', async () => {
+    expect(roomCheckMaxDuration).toBe(15);
+    vi.stubEnv('GEMINI_API_KEY', '');
+
+    const validPayload = {
+      imageBase64: 'A'.repeat(64),
+      cityKey: 'delhi',
+    };
+
+    for (let i = 0; i < 3; i += 1) {
+      const req = new NextRequest('http://localhost/api/room-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.95' },
+        body: JSON.stringify(validPayload),
+      });
+      const res = await postRoomCheck(req);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.source).toBe('template');
+      expect(body.mappedIndoor).toBe('seal_exhaust');
+      expect(body.bottlenecks.length).toBeGreaterThanOrEqual(1);
+    }
+
+    const blockedReq = new NextRequest('http://localhost/api/room-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.95' },
+      body: JSON.stringify(validPayload),
+    });
+    expect((await postRoomCheck(blockedReq)).status).toBe(429);
+
+    const badReq = new NextRequest('http://localhost/api/room-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.96' },
+      body: JSON.stringify({ imageBase64: 'short', cityKey: 'delhi' }),
+    });
+    expect((await postRoomCheck(badReq)).status).toBe(400);
   });
 });
