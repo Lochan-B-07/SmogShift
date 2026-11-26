@@ -454,20 +454,22 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
       ([url]) => typeof url === 'string' && url.startsWith('/api/analyze'),
     ).length;
 
-    // Flipping a toggle should NOT auto-fire /api/analyze
+    // Flipping a toggle should NOT auto-fire /api/analyze and should show stale notice
     await user.click(screen.getByRole('radio', { name: 'HEPA' }));
     const afterToggleAnalyzeCalls = fetchMock.mock.calls.filter(
       ([url]) => typeof url === 'string' && url.startsWith('/api/analyze'),
     ).length;
     expect(afterToggleAnalyzeCalls).toBe(initialAnalyzeCalls);
+    expect(screen.getByText(/Settings updated — click/i)).toBeInTheDocument();
 
-    // Explicit trigger button DOES fire /api/analyze
+    // Explicit trigger button DOES fire /api/analyze and clears stale notice
     await user.click(screen.getByRole('button', { name: 'Explain this plan' }));
     await waitFor(() => {
       const afterExplainCalls = fetchMock.mock.calls.filter(
         ([url]) => typeof url === 'string' && url.startsWith('/api/analyze'),
       ).length;
       expect(afterExplainCalls).toBe(initialAnalyzeCalls + 1);
+      expect(screen.queryByText(/Settings updated — click/i)).not.toBeInTheDocument();
     });
 
     // Clicking a static example chip applies profile+toggles without calling /api/plan-day

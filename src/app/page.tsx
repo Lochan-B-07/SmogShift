@@ -235,6 +235,7 @@ export default function Home(): ReactElement {
     analysis,
     loading: analyzeLoading,
     error: analyzeError,
+    stale: analyzeStale,
   } = useAnalyze({
     enabled: Boolean(data && engineSummary),
     cityKey: location.key,
@@ -370,7 +371,6 @@ export default function Home(): ReactElement {
               <ToggleGroup
                 toggles={toggles}
                 bestHour={simulation.summary.bestHour}
-                summary={simulation.summary}
                 onChange={handleTogglesChange}
               />
             </div>
@@ -390,6 +390,7 @@ export default function Home(): ReactElement {
               analysis={analysis}
               loading={analyzeLoading}
               error={analyzeError}
+              stale={analyzeStale}
               regime={data.fingerprint.regime}
               profile={profile}
               toggles={toggles}

@@ -3,12 +3,11 @@
 import * as RadixToggleGroup from '@radix-ui/react-toggle-group';
 import type { ReactElement } from 'react';
 import { describeIndoorDefense, describeTravelMode, formatClockHour } from '@/lib/formatters';
-import type { EngineSummary, Toggles } from '@/shared/schemas';
+import type { Toggles } from '@/shared/schemas';
 
 export interface ToggleGroupProps {
   readonly toggles: Toggles;
   readonly bestHour: number;
-  readonly summary: EngineSummary;
   readonly onChange: (next: Toggles) => void;
 }
 
@@ -39,17 +38,7 @@ function travelImpactLabel(value: Toggles['travel']): string {
   return '';
 }
 
-export function ToggleGroup({ toggles, bestHour, summary, onChange }: ToggleGroupProps): ReactElement {
-  const timingPct =
-    summary.baselinePctWho > 0
-      ? Math.max(
-          0,
-          Math.round(
-            ((summary.baselinePctWho - summary.adjustedPctWho) / summary.baselinePctWho) * 100,
-          ),
-        )
-      : 0;
-
+export function ToggleGroup({ toggles, bestHour, onChange }: ToggleGroupProps): ReactElement {
   return (
     <section
       aria-label="What-if simulation controls"
@@ -161,9 +150,9 @@ export function ToggleGroup({ toggles, bestHour, summary, onChange }: ToggleGrou
               </div>
               <p className="mt-0.5 text-xs text-zinc-700 dark:text-zinc-300">
                 Moves airing &amp; outdoor errand from 07:00 to {formatClockHour(bestHour)}.
-                {toggles.smartTiming && timingPct > 0 ? (
+                {toggles.smartTiming ? (
                   <span className="ml-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
-                    −{timingPct}% exposure
+                    Active · Shifted to {formatClockHour(bestHour)}
                   </span>
                 ) : null}
               </p>

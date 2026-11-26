@@ -15,6 +15,7 @@ export interface CausalCardProps {
   readonly analysis: AnalyzeResponse | null;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly stale?: boolean;
   readonly regime: Fingerprint['regime'];
   readonly profile: HouseholdProfile;
   readonly toggles: Toggles;
@@ -36,6 +37,7 @@ export function CausalCard({
   analysis,
   loading,
   error,
+  stale = false,
   regime,
   profile,
   toggles,
@@ -77,7 +79,11 @@ export function CausalCard({
               type="button"
               onClick={onExplainPlan}
               disabled={loading}
-              className="rounded-lg border border-teal-700 bg-white px-2.5 py-1 text-xs font-semibold text-teal-900 transition hover:bg-teal-50 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 disabled:opacity-50 dark:border-teal-600 dark:bg-zinc-800 dark:text-teal-200 dark:hover:bg-zinc-700"
+              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 disabled:opacity-50 ${
+                stale
+                  ? 'bg-teal-800 text-white hover:bg-teal-900 dark:bg-teal-600 dark:hover:bg-teal-500'
+                  : 'border border-teal-700 bg-white text-teal-900 hover:bg-teal-50 dark:border-teal-600 dark:bg-zinc-800 dark:text-teal-200 dark:hover:bg-zinc-700'
+              }`}
             >
               Explain this plan
             </button>
@@ -116,6 +122,16 @@ export function CausalCard({
           );
         })}
       </div>
+
+      {stale ? (
+        <p
+          role="status"
+          className="mt-2.5 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-1.5 text-xs font-medium text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          Settings updated — click &ldquo;Explain this plan&rdquo; to refresh the AI explanation for
+          your new choices.
+        </p>
+      ) : null}
 
       {loading && !analysis ? (
         <p className="mt-3 text-xs text-zinc-700 dark:text-zinc-300">

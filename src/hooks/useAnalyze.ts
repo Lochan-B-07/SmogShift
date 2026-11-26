@@ -27,14 +27,32 @@ export interface UseAnalyzeResult {
   readonly analysis: AnalyzeResponse | null;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly stale: boolean;
+}
+
+function buildSnapshotKey(
+  cityKey: string,
+  question: AnalyzeQuestion,
+  profile: HouseholdProfile,
+  toggles: Toggles,
+): string {
+  return `${cityKey}:${question}:${JSON.stringify(profile)}:${JSON.stringify(toggles)}`;
 }
 
 export function useAnalyze(params: UseAnalyzeParams): UseAnalyzeResult {
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null);
+  const [fetchedKey, setFetchedKey] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const lastAutoKeyRef = useRef<string>('');
   const triggerCount = params.explicitTrigger ?? 0;
+
+  const currentSnapshotKey = buildSnapshotKey(
+    params.cityKey,
+    params.question,
+    params.profile,
+    params.toggles,
+  );
 
   useEffect(() => {
     if (!params.enabled || !params.fingerprint || !params.engine) {
@@ -59,6 +77,12 @@ export function useAnalyze(params: UseAnalyzeParams): UseAnalyzeResult {
       no2Level: params.fingerprint.no2Level,
       engine: params.engine,
     };
+    const snapshotForFetch = buildSnapshotKey(
+      params.cityKey,
+      params.question,
+      params.profile,
+      params.toggles,
+    );
 
     async function run(): Promise<void> {
       setLoading(true);
@@ -77,6 +101,7 @@ export function useAnalyze(params: UseAnalyzeParams): UseAnalyzeResult {
         const parsed = AnalyzeResponseSchema.parse(json);
         if (active) {
           setAnalysis(parsed);
+          setFetchedKey(snapshotForFetch);
           setLoading(false);
         }
       } catch (err: unknown) {
@@ -105,5 +130,7 @@ export function useAnalyze(params: UseAnalyzeParams): UseAnalyzeResult {
     triggerCount,
   ]);
 
-  return { analysis, loading, error };
+  const stale = Boolean(analysis) && !loading && fetchedKey !== currentSnapshotKey;
+
+  return { analysis, loading, error, stale };
 }

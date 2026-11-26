@@ -79,6 +79,11 @@
 - Agent produced: Added `PlanDay*` & `RoomCheck*` Zod schemas (`src/shared/schemas.ts`), `src/data/planday-examples.ts`, `src/server/planday.ts`, `src/app/api/plan-day/route.ts`, `src/hooks/usePlanDay.ts`, `src/lib/icsGenerator.ts`, `DayPlannerInput.tsx`, `GamePlanCard.tsx`, throttled `useAnalyze.ts` + explicit `"Explain this plan"` button in `CausalCard.tsx`, `src/lib/imageCompressor.ts`, `src/data/room-samples.ts`, `public/room-samples/*.jpg`, `src/server/roomCheck.ts`, `src/app/api/room-check/route.ts`, `RoomCheckDrawer.tsx`, and expanded `aiRoutes.test.ts` + `ui.test.tsx`.
 - What I had to correct (include real bugs/failures): Kept `gameplan.bullets` and Vision `bottlenecks`/`fix` strictly guarded by `guardNumbers()` with `[]` invented stats, and ensured `.ics` `DTSTART` uses `simulation.summary.bestHour` from the deterministic engine.
 
+### 2026-11-26 — Post-Rework UI/DOM Audit & Polish
+- Asked: Audit the reworked UI/DOM for visual/UX bugs and bad impressions, and fix them cleanly alongside the real sample room photos.
+- Agent produced: Scoped sticky header to `sm:sticky` so `375px` mobile viewports are not blocked while scrolling (`Header.tsx`), replaced misleading total-reduction `%` under Smart Timing with `Active · Shifted to HH:00` (`ToggleGroup.tsx`), added `stale` tracking in `useAnalyze.ts` + inline `"Settings updated"` banner & highlighted `Explain this plan` button in `CausalCard.tsx`, improved `RoomCheckDrawer.tsx` sample fallback handling and file input reset, and verified with `ui.test.tsx`.
+- What I had to correct (include real bugs/failures): Caught that `sticky top-0` on mobile consumed ~260 px of vertical screen space and that Smart Timing displayed total combined reduction `%` rather than its own effect.
+
 ## Key lessons
 1. Locking the physics engine (`docs/ENGINE_SPEC.md`) and hand-computed fixtures (`F1–F11`) before touching UI or Gemini prevented silent formula drift and made `simulateDay()` deterministic in `< 1 ms`.
 2. Domain-aware numeric guarding (`guardNumbers()` stripping `PM2.5`, `N95`, `CO2e`, `₹500` before digit checking) eliminates false rejections while catching hallucinated percentages or clock times.

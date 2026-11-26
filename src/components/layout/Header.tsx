@@ -151,7 +151,7 @@ export function Header({
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-zinc-200/90 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/90">
+    <header className="border-b border-zinc-200/90 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/90 sm:sticky sm:top-0 sm:z-30">
       <div className="mx-auto flex max-w-4xl flex-col gap-2.5 px-4 py-3 sm:py-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">

@@ -58,7 +58,11 @@ export function RoomCheckDrawer({
       }
       const json: unknown = await res.json();
       const parsed = RoomCheckResponseSchema.parse(json);
-      setResult(parsed);
+      if (fallback && parsed.source === 'template') {
+        setResult(fallback);
+      } else {
+        setResult(parsed);
+      }
     } catch {
       if (fallback) {
         setResult(fallback);
@@ -74,6 +78,7 @@ export function RoomCheckDrawer({
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>): Promise<void> {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
     setError(null);
     setLoading(true);
