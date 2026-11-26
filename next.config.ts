@@ -8,6 +8,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   turbopack: {
     rules: {
       '*.css': {
