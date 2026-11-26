@@ -20,6 +20,7 @@ export interface UseAnalyzeParams {
   readonly toggles: Toggles;
   readonly fingerprint: Fingerprint | null;
   readonly engine: EngineSummary | null;
+  readonly explicitTrigger?: number;
 }
 
 export interface UseAnalyzeResult {
@@ -32,19 +33,19 @@ export function useAnalyze(params: UseAnalyzeParams): UseAnalyzeResult {
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const prevQuestionRef = useRef<AnalyzeQuestion>(params.question);
-  const prevCityRef = useRef<string>(params.cityKey);
+  const lastAutoKeyRef = useRef<string>('');
+  const triggerCount = params.explicitTrigger ?? 0;
 
   useEffect(() => {
     if (!params.enabled || !params.fingerprint || !params.engine) {
       return;
     }
 
-    const immediate =
-      prevQuestionRef.current !== params.question || prevCityRef.current !== params.cityKey;
-    prevQuestionRef.current = params.question;
-    prevCityRef.current = params.cityKey;
-    const delayMs = immediate ? 0 : 600;
+    const autoKey = `${params.cityKey}:${params.question}:${triggerCount}`;
+    if (lastAutoKeyRef.current === autoKey) {
+      return;
+    }
+    lastAutoKeyRef.current = autoKey;
 
     const controller = new AbortController();
     let active = true;
@@ -59,40 +60,38 @@ export function useAnalyze(params: UseAnalyzeParams): UseAnalyzeResult {
       engine: params.engine,
     };
 
-    const timer = setTimeout(() => {
-      async function run(): Promise<void> {
-        setLoading(true);
-        setError(null);
-        try {
-          const res = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controller.signal,
-          });
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
-          }
-          const json: unknown = await res.json();
-          const parsed = AnalyzeResponseSchema.parse(json);
-          if (active) {
-            setAnalysis(parsed);
-            setLoading(false);
-          }
-        } catch (err: unknown) {
-          if (err instanceof DOMException && err.name === 'AbortError') return;
-          if (active) {
-            setError('Unable to fetch explanation right now.');
-            setLoading(false);
-          }
+    async function run(): Promise<void> {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const json: unknown = await res.json();
+        const parsed = AnalyzeResponseSchema.parse(json);
+        if (active) {
+          setAnalysis(parsed);
+          setLoading(false);
+        }
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (active) {
+          setError('Unable to fetch explanation right now.');
+          setLoading(false);
         }
       }
-      void run();
-    }, delayMs);
+    }
+
+    void run();
 
     return () => {
       active = false;
-      clearTimeout(timer);
       controller.abort();
     };
   }, [
@@ -103,6 +102,7 @@ export function useAnalyze(params: UseAnalyzeParams): UseAnalyzeResult {
     params.toggles,
     params.fingerprint,
     params.engine,
+    triggerCount,
   ]);
 
   return { analysis, loading, error };

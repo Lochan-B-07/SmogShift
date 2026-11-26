@@ -5,6 +5,7 @@ import { resetRateLimitsForTest } from '@/server/rateLimit';
 import { AnalyzeRequestSchema } from '@/shared/schemas';
 import { POST as postAnalyze, maxDuration as analyzeMaxDuration } from './analyze/route';
 import { POST as postBrief } from './brief/route';
+import { POST as postPlanDay, maxDuration as planDayMaxDuration } from './plan-day/route';
 
 const VALID_ANALYZE_BODY = {
   cityKey: 'delhi',
@@ -135,5 +136,55 @@ describe('/api/analyze and /api/brief routes', () => {
       body: JSON.stringify({ ...VALID_BRIEF_BODY, pad: 'x'.repeat(4200) }),
     });
     expect((await postBrief(bigReq)).status).toBe(413);
+  });
+
+  it('POST /api/plan-day returns valid PlanDayResponse, validates input, and enforces 5/min rate limit', async () => {
+    expect(planDayMaxDuration).toBe(15);
+    vi.stubEnv('GEMINI_API_KEY', '');
+
+    const validReq = new NextRequest('http://localhost/api/plan-day', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.88' },
+      body: JSON.stringify({
+        text: 'Dropping my child to school, cooking on gas without exhaust, using metro.',
+        cityKey: 'delhi',
+      }),
+    });
+    const res = await postPlanDay(validReq);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.source).toBe('template');
+    expect(body.profile.sensitive).toBe('child');
+    expect(body.toggles.travel).toBe('metro_walk');
+    expect(body.gameplan.bullets.length).toBeGreaterThanOrEqual(1);
+
+    const shortReq = new NextRequest('http://localhost/api/plan-day', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.89' },
+      body: JSON.stringify({ text: 'hi', cityKey: 'delhi' }),
+    });
+    expect((await postPlanDay(shortReq)).status).toBe(400);
+
+    for (let i = 0; i < 4; i += 1) {
+      const okReq = new NextRequest('http://localhost/api/plan-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.88' },
+        body: JSON.stringify({
+          text: 'Working from home with induction stove.',
+          cityKey: 'delhi',
+        }),
+      });
+      expect((await postPlanDay(okReq)).status).toBe(200);
+    }
+
+    const rateLimitedReq = new NextRequest('http://localhost/api/plan-day', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.88' },
+      body: JSON.stringify({
+        text: 'Working from home with induction stove.',
+        cityKey: 'delhi',
+      }),
+    });
+    expect((await postPlanDay(rateLimitedReq)).status).toBe(429);
   });
 });

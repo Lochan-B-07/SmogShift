@@ -47,25 +47,38 @@ export interface GeminiDependencies {
   ) => Promise<string | undefined>;
 }
 
-async function callGeminiSdk(
-  req: AnalyzeRequest,
-  signal: AbortSignal,
-  model: string,
+export interface GeminiStructuredParams {
+  readonly systemInstruction: string;
+  readonly contents: string | ReadonlyArray<unknown>;
+  readonly responseSchema: Record<string, unknown>;
+  readonly signal: AbortSignal;
+  readonly model: string;
+  readonly temperature?: number;
+}
+
+export function getCandidateGeminiModels(): readonly string[] {
+  const primaryModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+  return primaryModel === SECONDARY_FALLBACK_MODEL
+    ? [primaryModel]
+    : [primaryModel, SECONDARY_FALLBACK_MODEL];
+}
+
+export async function callGeminiStructured(
+  params: GeminiStructuredParams,
 ): Promise<string | undefined> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return undefined;
 
   const ai = new GoogleGenAI({ apiKey });
-
   const response = await ai.models.generateContent({
-    model,
-    contents: JSON.stringify(req),
+    model: params.model,
+    contents: params.contents as string,
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      temperature: 0.3,
+      systemInstruction: params.systemInstruction,
+      temperature: params.temperature ?? 0.3,
       responseMimeType: 'application/json',
-      responseSchema: RESPONSE_SCHEMA,
-      abortSignal: signal,
+      responseSchema: params.responseSchema,
+      abortSignal: params.signal,
     },
   });
 
@@ -85,12 +98,7 @@ export async function generateCausalAnalysis(
     return buildTemplateAnalysis(req);
   }
 
-  const primaryModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
-  const candidateModels =
-    primaryModel === SECONDARY_FALLBACK_MODEL
-      ? [primaryModel]
-      : [primaryModel, SECONDARY_FALLBACK_MODEL];
-
+  const candidateModels = getCandidateGeminiModels();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -113,7 +121,13 @@ export async function generateCausalAnalysis(
       try {
         const rawText = hasCustomGenerator
           ? await deps.generateText!(req, controller.signal, model)
-          : await callGeminiSdk(req, controller.signal, model);
+          : await callGeminiStructured({
+              systemInstruction: SYSTEM_INSTRUCTION,
+              contents: JSON.stringify(req),
+              responseSchema: RESPONSE_SCHEMA,
+              signal: controller.signal,
+              model,
+            });
 
         if (!rawText) continue;
 
@@ -130,7 +144,6 @@ export async function generateCausalAnalysis(
           source: 'gemini',
         };
       } catch {
-        // Try secondary model on transient 503/network error before falling back
         if (controller.signal.aborted) break;
       }
     }

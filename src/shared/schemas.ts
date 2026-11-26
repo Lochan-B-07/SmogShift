@@ -136,6 +136,37 @@ export const ApiErrorSchema = z.object({
   }),
 });
 
+export const PlanDayRequestSchema = z.object({
+  text: z.string().trim().min(5).max(400),
+  cityKey: z.string().regex(/^[a-z0-9_-]{1,40}$/),
+});
+
+export const PlanDayExtractedSchema = z.object({
+  profile: HouseholdProfileSchema,
+  toggles: TogglesSchema,
+  activityShiftHour: z.number().int().min(6).max(22).nullable(),
+  gameplan: z.object({
+    bullets: z.array(z.string().min(1).max(220)).min(1).max(3),
+  }),
+  understoodAs: z.string().min(1).max(200),
+});
+
+export const PlanDayResponseSchema = PlanDayExtractedSchema.extend({
+  source: z.enum(['gemini', 'static_example', 'template']),
+});
+
+export const RoomCheckRequestSchema = z.object({
+  imageBase64: z.string().min(32).max(220_000),
+  cityKey: z.string().regex(/^[a-z0-9_-]{1,40}$/),
+});
+
+export const RoomCheckResponseSchema = z.object({
+  bottlenecks: z.array(z.string().min(1).max(180)).min(1).max(4),
+  fix: z.string().min(1).max(200),
+  mappedIndoor: TogglesSchema.shape.indoor,
+  source: z.enum(['gemini_vision', 'sample', 'template']),
+});
+
 export type Hour = z.infer<typeof HourSchema>;
 export type Fingerprint = z.infer<typeof FingerprintSchema>;
 export type AirQualityResponse = z.infer<typeof AirQualityResponseSchema>;
@@ -150,3 +181,8 @@ export type BriefResponse = z.infer<typeof BriefResponseSchema>;
 export type GeocodeResult = z.infer<typeof GeocodeResultSchema>;
 export type GeocodeResponse = z.infer<typeof GeocodeResponseSchema>;
 export type ApiError = z.infer<typeof ApiErrorSchema>;
+export type PlanDayRequest = z.infer<typeof PlanDayRequestSchema>;
+export type PlanDayExtracted = z.infer<typeof PlanDayExtractedSchema>;
+export type PlanDayResponse = z.infer<typeof PlanDayResponseSchema>;
+export type RoomCheckRequest = z.infer<typeof RoomCheckRequestSchema>;
+export type RoomCheckResponse = z.infer<typeof RoomCheckResponseSchema>;

@@ -1,9 +1,11 @@
 'use client';
 
-import { useCallback, useState, useSyncExternalStore, type ReactElement } from 'react';
+import { useCallback, useRef, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { ExposureChart } from '@/components/chart/ExposureChart';
 import { HourlyTable } from '@/components/chart/HourlyTable';
 import { CausalCard } from '@/components/controls/CausalCard';
+import { DayPlannerInput } from '@/components/controls/DayPlannerInput';
+import { GamePlanCard } from '@/components/controls/GamePlanCard';
 import { ImpactSummaryBar } from '@/components/controls/ImpactSummaryBar';
 import { MeterCards } from '@/components/controls/MeterCards';
 import { ToggleGroup } from '@/components/controls/ToggleGroup';
@@ -16,6 +18,7 @@ import { VerdictBanner } from '@/components/layout/VerdictBanner';
 import { useAirQuality, type ActiveLocation } from '@/hooks/useAirQuality';
 import { useAnalyze } from '@/hooks/useAnalyze';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { usePlanDay } from '@/hooks/usePlanDay';
 import { useSimulation } from '@/hooks/useSimulation';
 import { useTheme } from '@/hooks/useTheme';
 import { CITY_PRESETS, DEFAULT_CITY, DEFAULT_PROFILE, DEFAULT_TOGGLES } from '@/lib/presets';
@@ -112,8 +115,8 @@ function OnboardingCard(): ReactElement {
                 2
               </span>
               <span>
-                <strong>Tune the what-if controls</strong> — indoor filter, commute mode, and smart
-                timing. Watch exposure drop in real time.
+                <strong>Describe your day</strong> — or tune the what-if controls to watch exposure
+                drop in real time.
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -121,8 +124,8 @@ function OnboardingCard(): ReactElement {
                 3
               </span>
               <span>
-                <strong>Ask the AI Advisor</strong> — get Gemini-powered causal explanations for
-                your household profile.
+                <strong>Save your cleanest-air window</strong> — add a 1-tap calendar reminder or
+                share a Hindi/English brief.
               </span>
             </li>
           </ol>
@@ -182,7 +185,26 @@ export default function Home(): ReactElement {
     [setStoredToggles],
   );
 
+  const handlePlanExtracted = useCallback(
+    (nextProfile: HouseholdProfile, nextToggles: Toggles) => {
+      setProfile(nextProfile);
+      handleTogglesChange(nextToggles);
+    },
+    [setProfile, handleTogglesChange],
+  );
+
+  const plannerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const {
+    result: planResult,
+    loading: planLoading,
+    error: planError,
+    trigger: triggerPlanDay,
+    applyExample: applyPlanExample,
+    reset: resetPlanDay,
+  } = usePlanDay({ onExtracted: handlePlanExtracted });
+
   const [question, setQuestion] = useState<AnalyzeQuestion>('overview');
+  const [explicitAnalyzeTrigger, setExplicitAnalyzeTrigger] = useState<number>(0);
   const [profileOpen, setProfileOpen] = useState<boolean>(false);
   const [cadrOpen, setCadrOpen] = useState<boolean>(false);
   const [briefOpen, setBriefOpen] = useState<boolean>(false);
@@ -219,6 +241,7 @@ export default function Home(): ReactElement {
     toggles,
     fingerprint: data?.fingerprint ?? null,
     engine: engineSummary,
+    explicitTrigger: explicitAnalyzeTrigger,
   });
 
   const hasData = Boolean(data && simulation && simulation.ok);
@@ -297,6 +320,27 @@ export default function Home(): ReactElement {
 
         {hasData && data && simulation && simulation.ok ? (
           <>
+            <DayPlannerInput
+              loading={planLoading}
+              error={planError}
+              textareaRef={plannerTextareaRef}
+              onSubmitText={(text) => void triggerPlanDay(text, location.key)}
+              onSelectExample={applyPlanExample}
+            />
+
+            {planResult ? (
+              <GamePlanCard
+                plan={planResult}
+                bestHour={simulation.summary.bestHour}
+                cityName={location.name}
+                onEdit={() => {
+                  resetPlanDay();
+                  plannerTextareaRef.current?.focus();
+                }}
+                onOpenBrief={() => setBriefOpen(true)}
+              />
+            ) : null}
+
             <ImpactSummaryBar summary={simulation.summary} toggles={toggles} />
 
             <VerdictBanner
@@ -316,12 +360,17 @@ export default function Home(): ReactElement {
 
             <HourlyTable points={simulation.points} />
 
-            <ToggleGroup
-              toggles={toggles}
-              bestHour={simulation.summary.bestHour}
-              summary={simulation.summary}
-              onChange={handleTogglesChange}
-            />
+            <div className="pt-1">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+                See the math / Tweak it yourself
+              </p>
+              <ToggleGroup
+                toggles={toggles}
+                bestHour={simulation.summary.bestHour}
+                summary={simulation.summary}
+                onChange={handleTogglesChange}
+              />
+            </div>
 
             <MeterCards
               summary={simulation.summary}
@@ -342,6 +391,7 @@ export default function Home(): ReactElement {
               profile={profile}
               toggles={toggles}
               onSelectQuestion={setQuestion}
+              onExplainPlan={() => setExplicitAnalyzeTrigger((n) => n + 1)}
             />
 
             <ProfileDrawer

@@ -19,6 +19,7 @@ export interface CausalCardProps {
   readonly profile: HouseholdProfile;
   readonly toggles: Toggles;
   readonly onSelectQuestion: (q: AnalyzeQuestion) => void;
+  readonly onExplainPlan?: () => void;
 }
 
 const QUESTION_CHIPS: readonly { readonly value: AnalyzeQuestion; readonly label: string }[] = [
@@ -39,6 +40,7 @@ export function CausalCard({
   profile,
   toggles,
   onSelectQuestion,
+  onExplainPlan,
 }: CausalCardProps): ReactElement {
   return (
     <section
@@ -69,6 +71,16 @@ export function CausalCard({
             <span className="text-xs font-medium text-teal-800 dark:text-teal-300" role="status">
               Updating...
             </span>
+          ) : null}
+          {onExplainPlan ? (
+            <button
+              type="button"
+              onClick={onExplainPlan}
+              disabled={loading}
+              className="rounded-lg border border-teal-700 bg-white px-2.5 py-1 text-xs font-semibold text-teal-900 transition hover:bg-teal-50 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 disabled:opacity-50 dark:border-teal-600 dark:bg-zinc-800 dark:text-teal-200 dark:hover:bg-zinc-700"
+            >
+              Explain this plan
+            </button>
           ) : null}
           {analysis ? (
             <span

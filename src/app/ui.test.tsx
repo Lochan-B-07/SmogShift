@@ -8,6 +8,7 @@ import { getBestWindowBounds } from '@/components/chart/ExposureChartInner';
 import bengaluruSnapshot from '@/data/fallback/bengaluru.json';
 import delhiSnapshot from '@/data/fallback/delhi.json';
 import type { HourlySimulationPoint } from '@/engine';
+import { buildIcsText } from '@/lib/icsGenerator';
 import Home from './page';
 
 vi.mock('recharts', async () => {
@@ -21,9 +22,9 @@ vi.mock('recharts', async () => {
 });
 
 class MockResizeObserver {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
+  observe(): void { }
+  unobserve(): void { }
+  disconnect(): void { }
 }
 
 function setupFetchMock(options?: { readonly isFallback?: boolean }): ReturnType<typeof vi.fn> {
@@ -407,10 +408,10 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
             mode === 'clean'
               ? { ...bengaluruSnapshot, source: { ...bengaluruSnapshot.source, isFallback: false } }
               : {
-                  ...delhiSnapshot,
-                  source: { ...delhiSnapshot.source, isFallback: false },
-                  hours: delhiSnapshot.hours.map((h) => ({ ...h, pm25: 190, pm10: 250 })),
-                };
+                ...delhiSnapshot,
+                source: { ...delhiSnapshot.source, isFallback: false },
+                hours: delhiSnapshot.hours.map((h) => ({ ...h, pm25: 190, pm10: 250 })),
+              };
           return new Response(JSON.stringify(payload), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
@@ -439,5 +440,66 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     mode = 'hazardous';
     await user.click(screen.getByRole('button', { name: 'Lucknow' }));
     await screen.findByText(/No safe window today\. Least-bad hour is/i);
+  });
+
+  it('applies static day-planner example with zero /api/plan-day calls, renders GamePlanCard, and throttles /api/analyze on toggles', async () => {
+    const fetchMock = setupFetchMock();
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await screen.findByText(/Modeled forecast · Open-Meteo/i);
+    await screen.findByText(/Explanation for overview/i);
+
+    const initialAnalyzeCalls = fetchMock.mock.calls.filter(
+      ([url]) => typeof url === 'string' && url.startsWith('/api/analyze'),
+    ).length;
+
+    // Flipping a toggle should NOT auto-fire /api/analyze
+    await user.click(screen.getByRole('radio', { name: 'HEPA' }));
+    const afterToggleAnalyzeCalls = fetchMock.mock.calls.filter(
+      ([url]) => typeof url === 'string' && url.startsWith('/api/analyze'),
+    ).length;
+    expect(afterToggleAnalyzeCalls).toBe(initialAnalyzeCalls);
+
+    // Explicit trigger button DOES fire /api/analyze
+    await user.click(screen.getByRole('button', { name: 'Explain this plan' }));
+    await waitFor(() => {
+      const afterExplainCalls = fetchMock.mock.calls.filter(
+        ([url]) => typeof url === 'string' && url.startsWith('/api/analyze'),
+      ).length;
+      expect(afterExplainCalls).toBe(initialAnalyzeCalls + 1);
+    });
+
+    // Clicking a static example chip applies profile+toggles without calling /api/plan-day
+    await user.click(screen.getByRole('button', { name: 'Elder + HEPA + induction' }));
+    await screen.findByText(/Understood: Older adult · Induction cooker/i);
+    expect(screen.getByText(/Today's Game Plan · Delhi NCR/i)).toBeInTheDocument();
+
+    const planDayCalls = fetchMock.mock.calls.filter(
+      ([url]) => typeof url === 'string' && url.startsWith('/api/plan-day'),
+    );
+    expect(planDayCalls.length).toBe(0);
+
+    // Edit button dismisses GamePlanCard
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.queryByText(/Today's Game Plan · Delhi NCR/i)).not.toBeInTheDocument();
+  });
+
+  it('builds valid .ics calendar text from engine bestHour', () => {
+    const ics = buildIcsText(
+      {
+        title: 'Open windows',
+        description: 'Line 1\nLine 2',
+        startHour: 14,
+        durationMinutes: 45,
+        cityName: 'Delhi NCR',
+      },
+      new Date('2026-11-26T08:00:00'),
+    );
+    expect(ics).toContain('BEGIN:VCALENDAR');
+    expect(ics).toContain('DTSTART:20261126T140000');
+    expect(ics).toContain('DTEND:20261126T144500');
+    expect(ics).toContain('SUMMARY:Open windows (14:00)');
+    expect(ics).toContain('END:VCALENDAR');
   });
 });
