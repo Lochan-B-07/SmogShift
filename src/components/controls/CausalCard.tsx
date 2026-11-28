@@ -5,10 +5,12 @@ import { describeIndoorDefense, describeSensitiveGroup } from '@/lib/formatters'
 import type {
   AnalyzeQuestion,
   AnalyzeResponse,
+  EngineSummary,
   Fingerprint,
   HouseholdProfile,
   Toggles,
 } from '@/shared/schemas';
+import { VerificationPill } from './VerificationPill';
 
 export interface CausalCardProps {
   readonly question: AnalyzeQuestion;
@@ -19,6 +21,9 @@ export interface CausalCardProps {
   readonly regime: Fingerprint['regime'];
   readonly profile: HouseholdProfile;
   readonly toggles: Toggles;
+  readonly baselineMeanUgM3?: number;
+  readonly adjustedMeanUgM3?: number;
+  readonly engine?: EngineSummary;
   readonly onSelectQuestion: (q: AnalyzeQuestion) => void;
   readonly onExplainPlan?: () => void;
 }
@@ -41,6 +46,9 @@ export function CausalCard({
   regime,
   profile,
   toggles,
+  baselineMeanUgM3,
+  adjustedMeanUgM3,
+  engine,
   onSelectQuestion,
   onExplainPlan,
 }: CausalCardProps): ReactElement {
@@ -153,6 +161,15 @@ export function CausalCard({
             Recommended next move: {analysis.nextMove}
           </div>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">{analysis.caveat}</p>
+          {engine && baselineMeanUgM3 !== undefined && adjustedMeanUgM3 !== undefined ? (
+            <VerificationPill
+              source={analysis.source}
+              baselineMeanUgM3={baselineMeanUgM3}
+              adjustedMeanUgM3={adjustedMeanUgM3}
+              engine={engine}
+              regime={regime}
+            />
+          ) : null}
         </div>
       ) : null}
     </section>

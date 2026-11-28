@@ -3,11 +3,13 @@
 import { useCallback, useRef, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { ExposureChart } from '@/components/chart/ExposureChart';
 import { HourlyTable } from '@/components/chart/HourlyTable';
+import { BudgetFrontierCard } from '@/components/controls/BudgetFrontierCard';
 import { CausalCard } from '@/components/controls/CausalCard';
 import { DayPlannerInput } from '@/components/controls/DayPlannerInput';
 import { GamePlanCard } from '@/components/controls/GamePlanCard';
 import { ImpactSummaryBar } from '@/components/controls/ImpactSummaryBar';
 import { MeterCards } from '@/components/controls/MeterCards';
+import { RecoveryCard } from '@/components/controls/RecoveryCard';
 import { ToggleGroup } from '@/components/controls/ToggleGroup';
 import { AssumptionsModal } from '@/components/drawers/AssumptionsModal';
 import { BriefDrawer } from '@/components/drawers/BriefDrawer';
@@ -28,6 +30,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePlanDay } from '@/hooks/usePlanDay';
 import { useSimulation } from '@/hooks/useSimulation';
 import { useTheme } from '@/hooks/useTheme';
+import { formatClockHour } from '@/lib/formatters';
 import { CITY_PRESETS, DEFAULT_CITY, DEFAULT_PROFILE, DEFAULT_TOGGLES } from '@/lib/presets';
 import {
   TogglesSchema,
@@ -392,6 +395,10 @@ export default function Home(): ReactElement {
                   plan={planResult}
                   bestHour={simulation.summary.bestHour}
                   cityName={location.name}
+                  baselineMeanUgM3={simulation.baselineMeters.mean24}
+                  adjustedMeanUgM3={simulation.adjustedMeters.mean24}
+                  engine={simulation.summary}
+                  regime={data.fingerprint.regime}
                   onEdit={() => {
                     resetPlanDay();
                     plannerTextareaRef.current?.focus();
@@ -399,6 +406,13 @@ export default function Home(): ReactElement {
                   onOpenBrief={() => setBriefOpen(true)}
                 />
               ) : null}
+
+              <RecoveryCard
+                hours={data.hours}
+                profile={profile}
+                toggles={toggles}
+                onApplyRecovery={handleTogglesChange}
+              />
 
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-zinc-200/90 bg-white/95 px-4 py-3 text-xs shadow-sm dark:border-zinc-800 dark:bg-zinc-900/95">
                 <span className="text-zinc-700 dark:text-zinc-300">
@@ -422,10 +436,47 @@ export default function Home(): ReactElement {
               hidden={activeTab !== 'simulator'}
               className="flex flex-col gap-4"
             >
+              {toggles.customAiringHour !== undefined || toggles.customCommuteHour !== undefined ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-200 bg-teal-50/80 px-3.5 py-2 text-xs text-teal-950 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-200">
+                  <span>
+                    <strong>My Day schedule synced:</strong>{' '}
+                    {toggles.customAiringHour !== undefined
+                      ? `Baseline airing ${formatClockHour(toggles.customAiringHour)}`
+                      : null}
+                    {toggles.customAiringHour !== undefined &&
+                    toggles.customCommuteHour !== undefined
+                      ? ' · '
+                      : null}
+                    {toggles.customCommuteHour !== undefined
+                      ? `Commute ${formatClockHour(toggles.customCommuteHour)}`
+                      : null}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = { ...toggles };
+                      delete next.customAiringHour;
+                      delete next.customCommuteHour;
+                      handleTogglesChange(next);
+                    }}
+                    className="font-semibold text-teal-800 underline underline-offset-2 hover:text-teal-600 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:text-teal-300 dark:hover:text-teal-100"
+                  >
+                    Reset hours
+                  </button>
+                </div>
+              ) : null}
+
               <ToggleGroup
                 toggles={toggles}
                 bestHour={simulation.summary.bestHour}
                 onChange={handleTogglesChange}
+              />
+
+              <BudgetFrontierCard
+                hours={data.hours}
+                profile={profile}
+                toggles={toggles}
+                onSelectTier={handleTogglesChange}
               />
 
               <ExposureChart
@@ -466,6 +517,9 @@ export default function Home(): ReactElement {
                 regime={data.fingerprint.regime}
                 profile={profile}
                 toggles={toggles}
+                baselineMeanUgM3={simulation.baselineMeters.mean24}
+                adjustedMeanUgM3={simulation.adjustedMeters.mean24}
+                engine={simulation.summary}
                 onSelectQuestion={setQuestion}
                 onExplainPlan={() => setExplicitAnalyzeTrigger((n) => n + 1)}
               />
@@ -490,7 +544,14 @@ export default function Home(): ReactElement {
               </div>
               <RoomCheckPanel
                 cityKey={location.key}
+                hours={data.hours}
+                profile={profile}
+                toggles={toggles}
                 onApplyIndoor={(indoor) => handleTogglesChange({ ...toggles, indoor })}
+                onApplyFixes={(nextProfile, nextToggles) => {
+                  setProfile(nextProfile);
+                  handleTogglesChange(nextToggles);
+                }}
                 onAfterApply={() => setActiveTab('simulator')}
               />
             </div>
@@ -508,7 +569,14 @@ export default function Home(): ReactElement {
               open={roomCheckOpen}
               onOpenChange={setRoomCheckOpen}
               cityKey={location.key}
+              hours={data.hours}
+              profile={profile}
+              toggles={toggles}
               onApplyIndoor={(indoor) => handleTogglesChange({ ...toggles, indoor })}
+              onApplyFixes={(nextProfile, nextToggles) => {
+                setProfile(nextProfile);
+                handleTogglesChange(nextToggles);
+              }}
             />
 
             <BriefDrawer
@@ -518,6 +586,8 @@ export default function Home(): ReactElement {
               profile={profile}
               toggles={toggles}
               engine={simulation.summary}
+              adjustedMean24={simulation.adjustedMeters.mean24}
+              isFallback={data.source.isFallback}
             />
           </>
         ) : null}

@@ -1,14 +1,20 @@
 'use client';
 
 import type { ReactElement } from 'react';
+import { useSpeechBrief } from '@/hooks/useSpeechBrief';
 import { formatClockHour } from '@/lib/formatters';
 import { downloadIcs } from '@/lib/icsGenerator';
-import type { PlanDayResponse } from '@/shared/schemas';
+import type { EngineSummary, Fingerprint, PlanDayResponse } from '@/shared/schemas';
+import { VerificationPill } from './VerificationPill';
 
 export interface GamePlanCardProps {
   readonly plan: PlanDayResponse;
   readonly bestHour: number;
   readonly cityName: string;
+  readonly baselineMeanUgM3?: number;
+  readonly adjustedMeanUgM3?: number;
+  readonly engine?: EngineSummary;
+  readonly regime?: Fingerprint['regime'];
   readonly onEdit: () => void;
   readonly onOpenBrief: () => void;
 }
@@ -28,10 +34,15 @@ export function GamePlanCard({
   plan,
   bestHour,
   cityName,
+  baselineMeanUgM3,
+  adjustedMeanUgM3,
+  engine,
+  regime,
   onEdit,
   onOpenBrief,
 }: GamePlanCardProps): ReactElement {
   const bestClock = formatClockHour(bestHour);
+  const { supported: speechSupported, speaking, speak, stop } = useSpeechBrief();
 
   function handleDownloadCalendar(): void {
     downloadIcs({
@@ -98,7 +109,28 @@ export function GamePlanCard({
         >
           Share EN/HI Brief
         </button>
+        {speechSupported ? (
+          <button
+            type="button"
+            onClick={() =>
+              speaking ? stop() : speak(plan.gameplan.bullets.join(' '), 'en')
+            }
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-100 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+          >
+            {speaking ? 'Stop' : 'Listen'}
+          </button>
+        ) : null}
       </div>
+
+      {engine && regime !== undefined && baselineMeanUgM3 !== undefined && adjustedMeanUgM3 !== undefined ? (
+        <VerificationPill
+          source={plan.source}
+          baselineMeanUgM3={baselineMeanUgM3}
+          adjustedMeanUgM3={adjustedMeanUgM3}
+          engine={engine}
+          regime={regime}
+        />
+      ) : null}
     </section>
   );
 }

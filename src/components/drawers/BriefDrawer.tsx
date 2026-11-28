@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, type ReactElement } from 'react';
+import { useSpeechBrief } from '@/hooks/useSpeechBrief';
 import { formatClockHour } from '@/lib/formatters';
+import { downloadWhatsAppCardPng } from '@/lib/whatsappCardCanvas';
 import {
   BriefResponseSchema,
   type BriefRequest,
@@ -18,6 +20,8 @@ export interface BriefDrawerProps {
   readonly profile: HouseholdProfile;
   readonly toggles: Toggles;
   readonly engine: EngineSummary;
+  readonly adjustedMean24?: number;
+  readonly isFallback?: boolean;
 }
 
 function sanitizeCityName(raw: string): string {
@@ -35,12 +39,16 @@ export function BriefDrawer({
   profile,
   toggles,
   engine,
+  adjustedMean24,
+  isFallback = false,
 }: BriefDrawerProps): ReactElement {
   const [lang, setLang] = useState<'en' | 'hi'>('en');
   const [briefText, setBriefText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [cardStatus, setCardStatus] = useState<string | null>(null);
+  const { supported: speechSupported, speaking, speak, stop } = useSpeechBrief();
 
   useEffect(() => {
     if (!open) return;
@@ -176,7 +184,42 @@ export function BriefDrawer({
           >
             Share on WhatsApp
           </a>
+          <button
+            type="button"
+            disabled={!briefText}
+            onClick={() => {
+              void downloadWhatsAppCardPng({
+                lang,
+                cityName: sanitizeCityName(cityName),
+                engine,
+                adjustedMean24: adjustedMean24 ?? (engine.adjustedPctWho / 100) * 15,
+                toggles,
+                isFallback,
+              }).then((ok) => {
+                setCardStatus(ok ? 'PNG card downloaded!' : 'PNG export unavailable in this browser.');
+                setTimeout(() => setCardStatus(null), 2500);
+              });
+            }}
+            className="rounded-lg border border-teal-700 bg-white px-3 py-1.5 font-semibold text-teal-900 hover:bg-teal-50 disabled:opacity-50 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-teal-500 dark:bg-zinc-800 dark:text-teal-200 dark:hover:bg-zinc-700"
+          >
+            Download WhatsApp Card (PNG)
+          </button>
+          {speechSupported ? (
+            <button
+              type="button"
+              disabled={!briefText}
+              onClick={() => (speaking ? stop() : speak(briefText, lang))}
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 font-semibold text-zinc-900 hover:bg-zinc-100 disabled:opacity-50 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+            >
+              {speaking ? 'Stop' : 'Listen'}
+            </button>
+          ) : null}
         </div>
+        {cardStatus ? (
+          <p role="status" className="text-[11px] font-medium text-teal-800 dark:text-teal-300">
+            {cardStatus}
+          </p>
+        ) : null}
       </div>
     </DrawerShell>
   );

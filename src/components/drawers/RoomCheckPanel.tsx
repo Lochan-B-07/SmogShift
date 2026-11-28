@@ -1,20 +1,42 @@
 'use client';
 
 import Image from 'next/image';
-import { useId, useState, type ChangeEvent, type ReactElement } from 'react';
+import { useId, useMemo, useState, type ChangeEvent, type ReactElement } from 'react';
 import { ROOM_SAMPLES, type RoomSample } from '@/data/room-samples';
+import { evaluateRoomHazards } from '@/engine/roomHazards';
 import { describeIndoorDefense } from '@/lib/formatters';
 import { compressImageToBase64 } from '@/lib/imageCompressor';
 import {
   RoomCheckResponseSchema,
+  type CostTier,
+  type HouseholdProfile,
+  type Hour,
   type RoomCheckResponse,
+  type RoomHazardId,
   type Toggles,
 } from '@/shared/schemas';
 
 export interface RoomCheckPanelProps {
   readonly cityKey: string;
+  readonly hours?: readonly Hour[];
+  readonly profile?: HouseholdProfile;
+  readonly toggles?: Toggles;
   readonly onApplyIndoor: (indoor: Toggles['indoor']) => void;
+  readonly onApplyFixes?: (nextProfile: HouseholdProfile, nextToggles: Toggles) => void;
   readonly onAfterApply?: () => void;
+}
+
+function formatCostTierLabel(tier: CostTier): string {
+  switch (tier) {
+    case 'free_0':
+      return '₹0';
+    case 'under_500':
+      return 'Under ₹500';
+    case 'diy_2500':
+      return '~₹2,500';
+    case 'hepa_12000':
+      return '₹12,000+';
+  }
 }
 
 function sourceBadgeLabel(source: RoomCheckResponse['source']): string {
@@ -30,7 +52,11 @@ function sourceBadgeLabel(source: RoomCheckResponse['source']): string {
 
 export function RoomCheckPanel({
   cityKey,
+  hours,
+  profile,
+  toggles,
   onApplyIndoor,
+  onApplyFixes,
   onAfterApply,
 }: RoomCheckPanelProps): ReactElement {
   const uploadId = useId();
@@ -38,6 +64,25 @@ export function RoomCheckPanel({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RoomCheckResponse | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  const [checkedHazards, setCheckedHazards] = useState<readonly RoomHazardId[]>([]);
+
+  function setNextResult(next: RoomCheckResponse): void {
+    setResult(next);
+    setCheckedHazards(next.detectedHazards.map((h) => h.id));
+  }
+
+  const hazardEval = useMemo(() => {
+    if (!result || !hours || !profile || !toggles || result.detectedHazards.length === 0) {
+      return null;
+    }
+    return evaluateRoomHazards(hours, profile, toggles, result.detectedHazards, checkedHazards);
+  }, [result, hours, profile, toggles, checkedHazards]);
+
+  function toggleHazard(id: RoomHazardId): void {
+    setCheckedHazards((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  }
 
   async function runVisionCheck(
     base64: string,
@@ -57,13 +102,13 @@ export function RoomCheckPanel({
       const json: unknown = await res.json();
       const parsed = RoomCheckResponseSchema.parse(json);
       if (fallback && parsed.source === 'template') {
-        setResult(fallback);
+        setNextResult(fallback);
       } else {
-        setResult(parsed);
+        setNextResult(parsed);
       }
     } catch {
       if (fallback) {
-        setResult(fallback);
+        setNextResult(fallback);
       } else {
         setError(
           'Could not analyze the photo right now. Try one of the sample rooms or adjust Indoor Defense manually.',
@@ -97,7 +142,7 @@ export function RoomCheckPanel({
     try {
       const imgRes = await fetch(sample.imagePath);
       if (!imgRes.ok) {
-        setResult(sample.fallbackResponse);
+        setNextResult(sample.fallbackResponse);
         setLoading(false);
         return;
       }
@@ -105,7 +150,7 @@ export function RoomCheckPanel({
       const base64 = await compressImageToBase64(blob);
       await runVisionCheck(base64, sample.fallbackResponse);
     } catch {
-      setResult(sample.fallbackResponse);
+      setNextResult(sample.fallbackResponse);
       setLoading(false);
     }
   }
@@ -201,6 +246,65 @@ export function RoomCheckPanel({
             {result.fix}
           </div>
 
+          {result.detectedHazards.length > 0 ? (
+            <div className="space-y-2 rounded-xl border border-zinc-200 bg-white/90 p-3 dark:border-zinc-700 dark:bg-zinc-900/90">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-bold text-zinc-900 dark:text-zinc-50">
+                  Hazard-to-Physics Checklist
+                </span>
+                {hazardEval && hazardEval.ok ? (
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-950 dark:bg-emerald-950/70 dark:text-emerald-200">
+                    -{hazardEval.totalSavedUgM3.toFixed(1)} µg/m³ ({hazardEval.projectedMeanUgM3.toFixed(1)} µg/m³)
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="space-y-1.5">
+                {result.detectedHazards.map((hazard) => {
+                  const checked = checkedHazards.includes(hazard.id);
+                  const priced = hazardEval?.ok
+                    ? hazardEval.items.find((item) => item.hazard.id === hazard.id)
+                    : undefined;
+                  return (
+                    <label
+                      key={hazard.id}
+                      className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-200 bg-zinc-50/70 p-2 hover:bg-teal-50/50 dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:bg-zinc-800"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleHazard(hazard.id)}
+                        className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-teal-800 focus:ring-teal-700"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-1.5">
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            {hazard.label}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="rounded bg-zinc-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200">
+                              {formatCostTierLabel(hazard.costTier)}
+                            </span>
+                            {priced ? (
+                              <span className="font-bold text-teal-800 dark:text-teal-300">
+                                {priced.deltaUgM3 > 0
+                                  ? `-${priced.deltaUgM3.toFixed(1)} µg/m³`
+                                  : '0 µg/m³'}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-zinc-700 dark:text-zinc-300">
+                          {hazard.fixAction}
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
               Suggested preset: <strong>{describeIndoorDefense(result.mappedIndoor)}</strong>
@@ -208,12 +312,18 @@ export function RoomCheckPanel({
             <button
               type="button"
               onClick={() => {
-                onApplyIndoor(result.mappedIndoor);
+                if (hazardEval?.ok && onApplyFixes) {
+                  onApplyFixes(hazardEval.recommendedProfile, hazardEval.recommendedToggles);
+                } else {
+                  onApplyIndoor(result.mappedIndoor);
+                }
                 onAfterApply?.();
               }}
               className="rounded-lg bg-teal-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-900 focus:outline-2 focus:outline-offset-2 focus:outline-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500"
             >
-              Apply to simulator
+              {hazardEval?.ok && onApplyFixes
+                ? 'Apply Selected Fixes to Simulator'
+                : 'Apply to simulator'}
             </button>
           </div>
         </div>

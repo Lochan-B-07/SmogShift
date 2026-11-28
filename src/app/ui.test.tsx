@@ -9,6 +9,7 @@ import bengaluruSnapshot from '@/data/fallback/bengaluru.json';
 import delhiSnapshot from '@/data/fallback/delhi.json';
 import type { HourlySimulationPoint } from '@/engine';
 import { buildIcsText } from '@/lib/icsGenerator';
+import { buildWhatsAppCardLines, renderWhatsAppCardBlob } from '@/lib/whatsappCardCanvas';
 import Home from './page';
 
 vi.mock('recharts', async () => {
@@ -526,11 +527,22 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/Photos are resized in your browser/i)).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole('button', { name: 'Gas stove (no exhaust)' }));
-    await within(dialog).findByText(/Bottlenecks detected/i);
+    await user.click(within(dialog).getByRole('button', { name: 'Living room (door gap + plants)' }));
+    await within(dialog).findByText(/Hazard-to-Physics Checklist/i);
     expect((await axe(dialog)).violations).toEqual([]);
 
-    await user.click(within(dialog).getByRole('button', { name: 'Apply to simulator' }));
+    const doorCheckbox = within(dialog).getByRole('checkbox', {
+      name: /Visible balcony door gap/i,
+    });
+    expect(doorCheckbox).toBeChecked();
+    await user.click(doorCheckbox);
+    expect(doorCheckbox).not.toBeChecked();
+    await user.click(doorCheckbox);
+    expect(doorCheckbox).toBeChecked();
+
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Apply Selected Fixes to Simulator' }),
+    );
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
@@ -559,5 +571,107 @@ describe('Hero UI, DOM integrity, UX edge cases, and WCAG accessibility', () => 
     await user.click(screen.getByRole('tab', { name: /Room Audit/i }));
     expect(screen.getByText(/Check My Room \(Gemini Vision\)/i)).toBeInTheDocument();
     expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it('supports Mid-Day Recovery hit logging, Budget Frontier tier selection, and VerificationPill expansion with 0 axe violations', async () => {
+    setupFetchMock();
+    const user = userEvent.setup();
+    const { container } = render(<Home />);
+
+    await screen.findByText(/Modeled forecast · Open-Meteo/i);
+
+    // Log a mid-day hit in My Day tab -> shows WHO budget used and Recovery Mode
+    await user.click(screen.getByRole('button', { name: /\+ 45m traffic jam/i }));
+    expect(await screen.findByText(/% WHO budget used/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Apply Recovery Mode' }));
+
+    // Switch to Simulator and verify Budget Frontier applies Under ₹500 cleanly
+    await user.click(screen.getByRole('tab', { name: /Simulator/i }));
+    expect(screen.getByText(/₹0 to ₹12,000\+ Clean-Air Per Rupee/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Under ₹500/i }));
+    expect(screen.getByRole('radio', { name: 'Seal + Exhaust' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+
+    // Switch to AI Advisor and expand VerificationPill
+    await user.click(screen.getByRole('tab', { name: /AI Advisor/i }));
+    await screen.findByText(/Verified by Physics Engine · 0 Invented Numbers/i);
+    await user.click(screen.getByRole('button', { name: 'Inspect inputs' }));
+    expect(screen.getByText('Baseline mean')).toBeInTheDocument();
+    expect(screen.getByText('Adjusted mean')).toBeInTheDocument();
+
+    expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it('builds EN/HI WhatsApp card copy and guards canvas unavailability cleanly', async () => {
+    const enLines = buildWhatsAppCardLines({
+      lang: 'en',
+      cityName: 'Delhi NCR',
+      engine: {
+        baselinePctWho: 500,
+        adjustedPctWho: 250,
+        cigAvoided: 1.7,
+        bestHour: 15,
+        bestHourLabel: 'least_bad',
+        co2eKg: 43.3,
+        noxG: 26.7,
+      },
+      adjustedMean24: 37.5,
+      toggles: {
+        travel: 'carpool',
+        smartTiming: true,
+        indoor: 'seal_exhaust',
+        households: 25,
+      },
+    });
+    expect(enLines.title).toContain('Delhi NCR');
+    expect(enLines.airingLine).toContain('15:00');
+    expect(enLines.dropLine).toContain('-50%');
+
+    const hiLines = buildWhatsAppCardLines({
+      lang: 'hi',
+      cityName: 'Delhi NCR',
+      engine: {
+        baselinePctWho: 500,
+        adjustedPctWho: 250,
+        cigAvoided: 1.7,
+        bestHour: 15,
+        bestHourLabel: 'least_bad',
+        co2eKg: 43.3,
+        noxG: 26.7,
+      },
+      adjustedMean24: 37.5,
+      toggles: {
+        travel: 'carpool',
+        smartTiming: true,
+        indoor: 'seal_exhaust',
+        households: 25,
+      },
+      isFallback: true,
+    });
+    expect(hiLines.footer).toContain('Offline snapshot');
+
+    const blob = await renderWhatsAppCardBlob({
+      lang: 'en',
+      cityName: 'Delhi NCR',
+      engine: {
+        baselinePctWho: 500,
+        adjustedPctWho: 250,
+        cigAvoided: 1.7,
+        bestHour: 15,
+        bestHourLabel: 'least_bad',
+        co2eKg: 43.3,
+        noxG: 26.7,
+      },
+      adjustedMean24: 37.5,
+      toggles: {
+        travel: 'carpool',
+        smartTiming: true,
+        indoor: 'seal_exhaust',
+        households: 25,
+      },
+    });
+    expect(blob).toBeNull();
   });
 });
