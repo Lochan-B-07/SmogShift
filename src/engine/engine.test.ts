@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 import {
   buildRolling24Window,
   compareIndoorMethods,
+  computeBudgetFrontier,
   computeDailyEmissionsSavings,
   computeFingerprint,
   computeMeters,
+  computeRecoveryPlan,
   computeSteadyState,
+  evaluateRoomHazards,
   getCpcbPm25Category,
   getIndoorConfig,
   mapRoutine,
+  resolveCommuteHours,
   selectVentilationWindow,
   simulateDay,
   simulateIndoorSeries,
@@ -301,5 +305,162 @@ describe('Window, null interpolation, routine, CPCB bands, fingerprint, CADR', (
       ['plants', 0],
     ]);
     expect(methods[2].steadyStateFractionOfBaseline).toBeCloseTo(1, 6);
+  });
+});
+
+describe('Commit 1: Dynamic routine, room hazards, recovery & budget frontier invariants', () => {
+  const CITY_SCENARIOS = [
+    FIXTURE_WINDOW_HOURS,
+    FIXTURE_HAZARDOUS_HOURS,
+    FIXTURE_CLEAN_HOURS,
+    make24Hours(
+      Array.from({ length: 24 }, (_, h) => (h >= 12 && h <= 16 ? 42 : 72)),
+    ),
+  ];
+  const DEFAULT_PROFILE = {
+    sensitive: 'none',
+    roomSize: 'medium',
+    cooking: 'gas_no_exhaust',
+    commuteKm: 10,
+  } as const;
+  const BASE_TOGGLES = {
+    travel: 'solo_car',
+    smartTiming: false,
+    indoor: 'none',
+    households: 25,
+  } as const;
+
+  it('resolveCommuteHours follows omitted, <= 13, and > 13 rules', () => {
+    expect(resolveCommuteHours(undefined)).toEqual([9, 18]);
+    expect(resolveCommuteHours(8)).toEqual([8, 17]);
+    expect(resolveCommuteHours(13)).toEqual([13, 22]);
+    expect(resolveCommuteHours(19)).toEqual([9, 19]);
+  });
+
+  it('customAiringHour shifts baseline airing hour when smartTiming is off', () => {
+    const resolved = buildRolling24Window(FIXTURE_WINDOW_HOURS);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+
+    const steps = mapRoutine(resolved.hours, {
+      smartTiming: false,
+      bestHour: 14,
+      customAiringHour: 10,
+      customCommuteHour: 8,
+    });
+    expect(steps[10].isAiring).toBe(true);
+    expect(steps[7].isAiring).toBe(false);
+    expect(steps[8].isOutdoors).toBe(true);
+    expect(steps[17].isOutdoors).toBe(true);
+  });
+
+  it('do-no-harm timing: Smart Timing never worsens 24-h mean exposure across diurnal city scenarios', () => {
+    const diurnalHazardous = make24Hours(
+      Array.from({ length: 24 }, (_, h) => (h >= 13 && h <= 16 ? 150 : 210)),
+    );
+    const diurnalScenarios = [
+      FIXTURE_WINDOW_HOURS,
+      diurnalHazardous,
+      FIXTURE_CLEAN_HOURS,
+      CITY_SCENARIOS[3],
+    ];
+    for (const hours of diurnalScenarios) {
+      const base = simulateDay(hours, DEFAULT_PROFILE, BASE_TOGGLES);
+      const timed = simulateDay(hours, DEFAULT_PROFILE, {
+        ...BASE_TOGGLES,
+        smartTiming: true,
+      });
+      expect(base.ok).toBe(true);
+      expect(timed.ok).toBe(true);
+      if (!base.ok || !timed.ok) continue;
+      expect(timed.adjustedMeters.mean24).toBeLessThanOrEqual(base.adjustedMeters.mean24 + 1e-6);
+    }
+  });
+
+  it('monotonic defense & budget frontier across city scenarios', () => {
+    for (const hours of CITY_SCENARIOS) {
+      const frontier = computeBudgetFrontier(hours, DEFAULT_PROFILE, BASE_TOGGLES);
+      expect(frontier.ok).toBe(true);
+      if (!frontier.ok) continue;
+
+      expect(frontier.tiers.map((t) => t.tier)).toEqual([
+        'free_0',
+        'under_500',
+        'diy_2500',
+        'hepa_12000',
+      ]);
+
+      const [free0, under500, diy2500, hepa12000] = frontier.tiers;
+      expect(under500.meanUgM3).toBeLessThanOrEqual(free0.meanUgM3);
+      expect(diy2500.meanUgM3).toBeLessThanOrEqual(under500.meanUgM3);
+      expect(hepa12000.meanUgM3).toBeLessThanOrEqual(diy2500.meanUgM3);
+      expect(hepa12000.shareOfMaxBenefitPct).toBe(100);
+    }
+  });
+
+  it('recovery invariant: logging a hit adds debt and recovery reduces remaining exposure', () => {
+    const plan = computeRecoveryPlan(
+      FIXTURE_WINDOW_HOURS,
+      DEFAULT_PROFILE,
+      BASE_TOGGLES,
+      ['traffic_jam_45m', 'closed_kitchen_smoke'],
+      11,
+    );
+    expect(plan.ok).toBe(true);
+    if (!plan.ok) return;
+
+    expect(plan.debtUgM3).toBeGreaterThan(0);
+    expect(plan.hitMeanUgM3).toBeGreaterThan(plan.baselineMeanUgM3);
+    expect(plan.recoveredMeanUgM3).toBeLessThan(plan.hitMeanUgM3);
+    expect(plan.recoverableUgM3).toBeGreaterThan(0);
+    expect(plan.steps).toHaveLength(3);
+  });
+
+  it('evaluateRoomHazards prices real hazards > 0 and potted_plants_myth at 0', () => {
+    const hazards = [
+      {
+        id: 'unvented_gas_stove',
+        label: 'Unvented gas stove',
+        fixAction: 'Run kitchen exhaust fan',
+        costTier: 'free_0',
+      },
+      {
+        id: 'unsealed_door_gap',
+        label: 'Balcony door gap',
+        fixAction: 'Apply foam weatherstrip',
+        costTier: 'under_500',
+      },
+      {
+        id: 'potted_plants_myth',
+        label: 'Potted plants myth',
+        fixAction: 'Use filtration instead',
+        costTier: 'diy_2500',
+      },
+    ] as const;
+
+    const allChecked = evaluateRoomHazards(
+      FIXTURE_WINDOW_HOURS,
+      DEFAULT_PROFILE,
+      BASE_TOGGLES,
+      hazards,
+    );
+    expect(allChecked.ok).toBe(true);
+    if (!allChecked.ok) return;
+
+    expect(allChecked.items[0].deltaUgM3).toBeGreaterThan(0);
+    expect(allChecked.items[1].deltaUgM3).toBeGreaterThan(0);
+    expect(allChecked.items[2].deltaUgM3).toBe(0);
+    expect(allChecked.projectedMeanUgM3).toBeLessThan(allChecked.baselineMeanUgM3);
+
+    const noneChecked = evaluateRoomHazards(
+      FIXTURE_WINDOW_HOURS,
+      DEFAULT_PROFILE,
+      BASE_TOGGLES,
+      hazards,
+      [],
+    );
+    expect(noneChecked.ok).toBe(true);
+    if (!noneChecked.ok) return;
+    expect(noneChecked.totalSavedUgM3).toBe(0);
   });
 });

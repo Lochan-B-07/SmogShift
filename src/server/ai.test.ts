@@ -10,7 +10,9 @@ import {
 } from './cache';
 import { generateCausalAnalysis } from './gemini';
 import { guardAnalyzeResponseFields, guardNumbers } from './guard';
+import { generatePlanDay } from './planday';
 import { resetRateLimitsForTest } from './rateLimit';
+import { analyzeRoomPhoto } from './roomCheck';
 
 const SAMPLE_REQ: AnalyzeRequest = {
   cityKey: 'delhi',
@@ -225,5 +227,101 @@ describe('Deterministic EN/HI Family & RWA brief', () => {
     expect(hi.lang).toBe('hi');
     expect(hi.text).toContain('14:00');
     expect(hi.text).toContain('Open-Meteo');
+  });
+});
+
+describe('Plan-day and Room-check structured guardrails', () => {
+  afterEach(() => {
+    resetRateLimitsForTest();
+    vi.unstubAllEnvs();
+  });
+
+  it('generatePlanDay extracts customAiringHour/customCommuteHour and rejects invented stats', async () => {
+    const valid = await generatePlanDay(
+      { text: 'Leave at 8 for school, air house at 10', cityKey: 'delhi' },
+      {
+        generateText: async () =>
+          JSON.stringify({
+            profile: SAMPLE_REQ.profile,
+            toggles: { ...SAMPLE_REQ.toggles, customAiringHour: 10, customCommuteHour: 8 },
+            activityShiftHour: null,
+            customAiringHour: 10,
+            customCommuteHour: 8,
+            gameplan: {
+              bullets: [
+                'Keep morning school commute masked.',
+                'Shift airing to the cleanest afternoon hour.',
+              ],
+            },
+            understoodAs: 'School commute at 8 · Airing at 10',
+          }),
+      },
+    );
+    expect(valid.source).toBe('gemini');
+    expect(valid.customAiringHour).toBe(10);
+    expect(valid.customCommuteHour).toBe(8);
+    expect(valid.toggles.customCommuteHour).toBe(8);
+
+    const hallucinated = await generatePlanDay(
+      { text: 'Leave at 8 for school', cityKey: 'delhi' },
+      {
+        generateText: async () =>
+          JSON.stringify({
+            profile: SAMPLE_REQ.profile,
+            toggles: SAMPLE_REQ.toggles,
+            activityShiftHour: null,
+            gameplan: { bullets: ['This cuts pollution by ७५ percent today.'] },
+            understoodAs: 'School commute',
+          }),
+      },
+    );
+    expect(hallucinated.source).toBe('template');
+  });
+
+  it('analyzeRoomPhoto returns detectedHazards and rejects digits inside hazard text', async () => {
+    const valid = await analyzeRoomPhoto(
+      { imageBase64: 'A'.repeat(64), cityKey: 'delhi' },
+      {
+        generateText: async () =>
+          JSON.stringify({
+            bottlenecks: ['Unsealed balcony door gap lets outdoor smog indoors.'],
+            fix: 'Seal door gap with foam weatherstrip.',
+            mappedIndoor: 'seal_exhaust',
+            detectedHazards: [
+              {
+                id: 'unsealed_door_gap',
+                label: 'Unsealed balcony door gap',
+                fixAction: 'Install foam weatherstrip tape along frame',
+                costTier: 'under_500',
+              },
+            ],
+          }),
+      },
+    );
+    expect(valid.source).toBe('gemini_vision');
+    expect(valid.detectedHazards).toHaveLength(1);
+    expect(valid.detectedHazards[0].costTier).toBe('under_500');
+
+    const withDigits = await analyzeRoomPhoto(
+      { imageBase64: 'A'.repeat(64), cityKey: 'delhi' },
+      {
+        generateText: async () =>
+          JSON.stringify({
+            bottlenecks: ['Unsealed door gap.'],
+            fix: 'Seal door gap.',
+            mappedIndoor: 'seal_exhaust',
+            detectedHazards: [
+              {
+                id: 'unsealed_door_gap',
+                label: 'Unsealed door gap costing ₹350',
+                fixAction: 'Buy ₹350 tape',
+                costTier: 'under_500',
+              },
+            ],
+          }),
+      },
+    );
+    expect(withDigits.source).toBe('template');
+    expect(withDigits.detectedHazards.length).toBeGreaterThan(0);
   });
 });

@@ -19,6 +19,20 @@ export const ROOM_SAMPLES: readonly RoomSample[] = [
       ],
       fix: 'Run a kitchen exhaust fan or crack a cross-vent window while cooking, then seal doors afterward.',
       mappedIndoor: 'seal_exhaust',
+      detectedHazards: [
+        {
+          id: 'unvented_gas_stove',
+          label: 'Unvented gas stove burner',
+          fixAction: 'Turn on kitchen exhaust fan or chimney while cooking',
+          costTier: 'free_0',
+        },
+        {
+          id: 'blocked_cross_vent',
+          label: 'Closed kitchen cross-ventilation',
+          fixAction: 'Open kitchen window during the cleanest daytime hour',
+          costTier: 'free_0',
+        },
+      ],
       source: 'sample',
     },
   },
@@ -33,6 +47,20 @@ export const ROOM_SAMPLES: readonly RoomSample[] = [
       ],
       fix: 'Add an under-door draft stopper or foam weatherstrip (~INR 300) and pair with a DIY box-fan filter.',
       mappedIndoor: 'diy_box',
+      detectedHazards: [
+        {
+          id: 'unsealed_door_gap',
+          label: 'Visible balcony door gap',
+          fixAction: 'Install foam weatherstrip or under-door draft stopper',
+          costTier: 'under_500',
+        },
+        {
+          id: 'potted_plants_myth',
+          label: 'Potted plants relied on for filtering',
+          fixAction: 'Pair room with a DIY box-fan filter instead of plants',
+          costTier: 'diy_2500',
+        },
+      ],
       source: 'sample',
     },
   },

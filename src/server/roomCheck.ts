@@ -14,8 +14,13 @@ Rules:
 1. Return 1 to 3 short \`bottlenecks\` bullets.
 2. Return ONE cheapest practical \`fix\` (e.g., under-door draft stopper, kitchen exhaust habit, or DIY box-fan filter).
 3. Map \`mappedIndoor\` to the best matching simulator setting: 'none' | 'seal_exhaust' | 'diy_box' | 'hepa'.
-4. NEVER invent statistics, percentages, or ug/m3 numbers.
-5. Output JSON only.`;
+4. Return 1 to 4 \`detectedHazards\` items, each with:
+   - \`id\`: one of 'unvented_gas_stove' | 'unsealed_door_gap' | 'potted_plants_myth' | 'indoor_smoke_source' | 'blocked_cross_vent'
+   - \`label\`: short hazard title (strictly ZERO digits, no currency numbers)
+   - \`fixAction\`: short actionable fix (strictly ZERO digits, no currency numbers)
+   - \`costTier\`: 'free_0' | 'under_500' | 'diy_2500' | 'hepa_12000'
+5. NEVER invent statistics, percentages, currency amounts, or ug/m3 numbers in any text field.
+6. Output JSON only.`;
 
 const ROOM_CHECK_SCHEMA = {
   type: Type.OBJECT,
@@ -26,8 +31,21 @@ const ROOM_CHECK_SCHEMA = {
     },
     fix: { type: Type.STRING },
     mappedIndoor: { type: Type.STRING },
+    detectedHazards: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          label: { type: Type.STRING },
+          fixAction: { type: Type.STRING },
+          costTier: { type: Type.STRING },
+        },
+        required: ['id', 'label', 'fixAction', 'costTier'],
+      },
+    },
   },
-  required: ['bottlenecks', 'fix', 'mappedIndoor'],
+  required: ['bottlenecks', 'fix', 'mappedIndoor', 'detectedHazards'],
 };
 
 const VisionPayloadSchema = RoomCheckResponseSchema.omit({ source: true });
@@ -49,6 +67,26 @@ function buildRoomCheckFallback(): RoomCheckResponse {
     ],
     fix: 'Seal visible window/door gaps with foam tape (~INR 300) and turn on kitchen exhaust while cooking.',
     mappedIndoor: 'seal_exhaust',
+    detectedHazards: [
+      {
+        id: 'unsealed_door_gap',
+        label: 'Unsealed door or window gap',
+        fixAction: 'Seal visible gaps with foam weatherstrip tape',
+        costTier: 'under_500',
+      },
+      {
+        id: 'unvented_gas_stove',
+        label: 'Gas cooking without active exhaust',
+        fixAction: 'Run kitchen exhaust fan while cooking',
+        costTier: 'free_0',
+      },
+      {
+        id: 'potted_plants_myth',
+        label: 'Indoor plants relied on for air cleaning',
+        fixAction: 'Use draft sealing or a DIY box-fan filter instead',
+        costTier: 'diy_2500',
+      },
+    ],
     source: 'template',
   };
 }
@@ -105,7 +143,10 @@ export async function analyzeRoomPhoto(
 
         const safeBottlenecks = parsed.data.bottlenecks.every((b) => guardNumbers(b, [], []));
         const safeFix = guardNumbers(parsed.data.fix, [], []);
-        if (!safeBottlenecks || !safeFix) continue;
+        const safeHazards = parsed.data.detectedHazards.every(
+          (h) => guardNumbers(h.label, [], []) && guardNumbers(h.fixAction, [], []),
+        );
+        if (!safeBottlenecks || !safeFix || !safeHazards) continue;
 
         return {
           ...parsed.data,

@@ -67,10 +67,14 @@ export function simulateDay(
   const baselineRoutine = mapRoutine(resolvedHours, {
     smartTiming: false,
     bestHour: bestWindow.bestHour,
+    customAiringHour: toggles.customAiringHour,
+    customCommuteHour: toggles.customCommuteHour,
   });
   const adjustedRoutine = mapRoutine(resolvedHours, {
     smartTiming: toggles.smartTiming,
     bestHour: bestWindow.bestHour,
+    customAiringHour: toggles.customAiringHour,
+    customCommuteHour: toggles.customCommuteHour,
   });
 
   const baselineIndoorConfig = getIndoorConfig('none', profile);

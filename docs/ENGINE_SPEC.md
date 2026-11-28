@@ -109,6 +109,15 @@ Every constant exports `{ value, unit, source }`.
 | Petrol car (solo) $\text{NO}_x$ | $0.08\text{ g/km}$ | ARAI / CPCB BS-IV petrol passenger car benchmark |
 | Metro rail (electric) $\text{CO}_2\text{e}$ | $25\text{ g/pkm}$ | Mumbai Metro LCA (ScienceDirect, 2024; conservative upper bound) |
 | Metro rail (electric) local $\text{NO}_x$ | $0\text{ g/pkm}$ | Zero urban tailpipe $\text{NO}_x$ |
+| Exposure hit: `traffic_jam_45m` | $180\,\mu\text{g/m}^3$ (1-h eq) | Assumption (heavy roadside traffic spike for 45 min) |
+| Exposure hit: `closed_kitchen_smoke` | $120\,\mu\text{g/m}^3$ (1-h eq) | Assumption (30 min closed-kitchen *tadka* or incense spike) |
+| Exposure hit: `outdoor_errand_1h` | $90\,\mu\text{g/m}^3$ (1-h eq) | Assumption (1-h outdoor errand spike during peak hour) |
+| Room hazard: `indoor_smoke_source` | $1200\,\mu\text{g/h}$ (19:00 & 21:00) | Assumption (evening indoor smoke/incense emission tier) |
+
+## 8.11 Dynamic schedule sync, recovery & budget frontier
+- **Dynamic commute & airing hours (`src/engine/routine.ts`):** When `customAiringHour` ($6\text{–}22$) is supplied, baseline airing shifts from `07:00` to `customAiringHour` (Smart Timing still moves airing to `bestHour`). When `customCommuteHour` ($5\text{–}22$) is supplied: if $\le 13$, commute hours are `[customCommuteHour, min(22, customCommuteHour + 9)]`; if $> 13$, commute hours are `[9, customCommuteHour]`; if omitted, default `[9, 18]`.
+- **Mid-day exposure debt & recovery (`src/engine/recovery.ts`):** Takes explicit `currentHour` ($0\text{–}23$, never `new Date()`), injects the active exposure-hit spike(s) into the 24-h exposure curve, and computes `debtUgM3`, `budgetUsedPct` (relative to WHO $15\,\mu\text{g/m}^3$), and `recoverableUgM3` under Recovery Mode (`smartTiming: true` and `seal_exhaust` if `indoor === 'none'`).
+- **Budget frontier (`src/engine/budgetFrontier.ts`):** Evaluates 4 tiers (`free_0`, `under_500`, `diy_2500`, `hepa_12000`) against the unmitigated baseline (`smartTiming: false, indoor: 'none'`) and reports `shareOfMaxBenefitPct` relative to `hepa_12000`.
 
 **Official CPCB $\text{PM}_{2.5}$ 24-hr category bands** (always render text + icon + number, never color alone):
 `0–30` Good | `31–60` Satisfactory | `61–90` Moderately Polluted | `91–120` Poor | `121–250` Very Poor | `250+` Severe.

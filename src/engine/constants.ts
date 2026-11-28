@@ -144,3 +144,29 @@ export const VENTILATION_SEARCH_END_HOUR = 22;
 export const CLEAN_DAY_MAX_PM25 = 30;
 export const WINDOW_SPAN_TOLERANCE = 0.15;
 export const MAX_CONSECUTIVE_NULL_HOURS = 3;
+
+export const HIT_TRAFFIC_JAM_45M_UG_M3: CitedConstant = {
+  value: 180,
+  unit: 'ug/m3',
+  source: 'Assumption (1-h equivalent roadside traffic jam spike for 45 min)',
+};
+
+export const HIT_CLOSED_KITCHEN_SMOKE_UG_M3: CitedConstant = {
+  value: 120,
+  unit: 'ug/m3',
+  source: 'Assumption (1-h equivalent 30 min closed-kitchen tadka or incense spike)',
+};
+
+export const HIT_OUTDOOR_ERRAND_1H_UG_M3: CitedConstant = {
+  value: 90,
+  unit: 'ug/m3',
+  source: 'Assumption (1-h outdoor errand spike during peak hour)',
+};
+
+export const HAZARD_SMOKE_SOURCE_UG_H: CitedConstant = {
+  value: 1200,
+  unit: 'ug/h',
+  source: 'Assumption (evening indoor smoke/incense emission tier)',
+};
+
+export const HAZARD_SMOKE_HOURS: readonly number[] = [19, 21];

@@ -50,6 +50,8 @@ export const TogglesSchema = z.object({
   smartTiming: z.boolean(),
   indoor: z.enum(['none', 'seal_exhaust', 'diy_box', 'hepa']),
   households: z.union([z.literal(1), z.literal(25), z.literal(100), z.literal(200)]),
+  customAiringHour: z.number().int().min(6).max(22).optional(),
+  customCommuteHour: z.number().int().min(5).max(22).optional(),
 });
 
 export const EngineSummarySchema = z.object({
@@ -145,6 +147,8 @@ export const PlanDayExtractedSchema = z.object({
   profile: HouseholdProfileSchema,
   toggles: TogglesSchema,
   activityShiftHour: z.number().int().min(6).max(22).nullable(),
+  customAiringHour: z.number().int().min(6).max(22).optional(),
+  customCommuteHour: z.number().int().min(5).max(22).optional(),
   gameplan: z.object({
     bullets: z.array(z.string().min(1).max(220)).min(1).max(3),
   }),
@@ -155,6 +159,29 @@ export const PlanDayResponseSchema = PlanDayExtractedSchema.extend({
   source: z.enum(['gemini', 'static_example', 'template']),
 });
 
+export const RoomHazardIdSchema = z.enum([
+  'unvented_gas_stove',
+  'unsealed_door_gap',
+  'potted_plants_myth',
+  'indoor_smoke_source',
+  'blocked_cross_vent',
+]);
+
+export const CostTierSchema = z.enum(['free_0', 'under_500', 'diy_2500', 'hepa_12000']);
+
+export const DetectedHazardSchema = z.object({
+  id: RoomHazardIdSchema,
+  label: z.string().min(1).max(80),
+  fixAction: z.string().min(1).max(120),
+  costTier: CostTierSchema,
+});
+
+export const ExposureHitIdSchema = z.enum([
+  'traffic_jam_45m',
+  'closed_kitchen_smoke',
+  'outdoor_errand_1h',
+]);
+
 export const RoomCheckRequestSchema = z.object({
   imageBase64: z.string().min(32).max(220_000),
   cityKey: z.string().regex(/^[a-z0-9_-]{1,40}$/),
@@ -164,6 +191,7 @@ export const RoomCheckResponseSchema = z.object({
   bottlenecks: z.array(z.string().min(1).max(180)).min(1).max(4),
   fix: z.string().min(1).max(200),
   mappedIndoor: TogglesSchema.shape.indoor,
+  detectedHazards: z.array(DetectedHazardSchema).max(4),
   source: z.enum(['gemini_vision', 'sample', 'template']),
 });
 
@@ -186,3 +214,7 @@ export type PlanDayExtracted = z.infer<typeof PlanDayExtractedSchema>;
 export type PlanDayResponse = z.infer<typeof PlanDayResponseSchema>;
 export type RoomCheckRequest = z.infer<typeof RoomCheckRequestSchema>;
 export type RoomCheckResponse = z.infer<typeof RoomCheckResponseSchema>;
+export type RoomHazardId = z.infer<typeof RoomHazardIdSchema>;
+export type CostTier = z.infer<typeof CostTierSchema>;
+export type DetectedHazard = z.infer<typeof DetectedHazardSchema>;
+export type ExposureHitId = z.infer<typeof ExposureHitIdSchema>;

@@ -24,8 +24,12 @@ export const PLANDAY_EXAMPLES: readonly PlanDayExample[] = [
         smartTiming: true,
         indoor: 'seal_exhaust',
         households: 25,
+        customAiringHour: 7,
+        customCommuteHour: 8,
       },
       activityShiftHour: null,
+      customAiringHour: 7,
+      customCommuteHour: 8,
       gameplan: {
         bullets: [
           'Morning scooter drop-off hits peak outdoor PM2.5 — pair an N95 mask for the ride and shift non-urgent errands to the cleanest afternoon window.',
@@ -53,8 +57,10 @@ export const PLANDAY_EXAMPLES: readonly PlanDayExample[] = [
         smartTiming: true,
         indoor: 'diy_box',
         households: 25,
+        customAiringHour: 7,
       },
       activityShiftHour: null,
+      customAiringHour: 7,
       gameplan: {
         bullets: [
           'Two unvented gas cooking sessions are your biggest indoor PM2.5 spike when staying home all day.',
@@ -82,8 +88,10 @@ export const PLANDAY_EXAMPLES: readonly PlanDayExample[] = [
         smartTiming: true,
         indoor: 'hepa',
         households: 25,
+        customAiringHour: 7,
       },
       activityShiftHour: null,
+      customAiringHour: 7,
       gameplan: {
         bullets: [
           'Induction cooking plus a HEPA purifier is already the strongest indoor defense for an older adult.',

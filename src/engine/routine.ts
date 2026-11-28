@@ -117,15 +117,32 @@ export function buildRolling24Window(
   return { ok: true, hours: resolved };
 }
 
+export function resolveCommuteHours(customCommuteHour?: number): readonly number[] {
+  if (customCommuteHour === undefined) {
+    return COMMUTE_HOURS;
+  }
+  if (customCommuteHour <= 13) {
+    return [customCommuteHour, Math.min(22, customCommuteHour + 9)];
+  }
+  return [9, customCommuteHour];
+}
+
 export function mapRoutine(
   hours: readonly ResolvedHour[],
-  options: { readonly smartTiming: boolean; readonly bestHour: number },
+  options: {
+    readonly smartTiming: boolean;
+    readonly bestHour: number;
+    readonly customAiringHour?: number;
+    readonly customCommuteHour?: number;
+  },
 ): readonly RoutineStep[] {
-  const airingAndFlexHour = options.smartTiming ? options.bestHour : DEFAULT_AIRING_HOUR;
+  const baselineAiringHour = options.customAiringHour ?? DEFAULT_AIRING_HOUR;
+  const airingAndFlexHour = options.smartTiming ? options.bestHour : baselineAiringHour;
+  const commuteHours = resolveCommuteHours(options.customCommuteHour);
 
   return hours.map((h) => {
     const isFlexOrAiring = h.hourOfDay === airingAndFlexHour;
-    const isCommute = COMMUTE_HOURS.includes(h.hourOfDay);
+    const isCommute = commuteHours.includes(h.hourOfDay);
     const isCooking = COOKING_HOURS.includes(h.hourOfDay);
     const isOutdoors = isFlexOrAiring || isCommute;
     const isAiring = isFlexOrAiring;

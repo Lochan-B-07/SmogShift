@@ -7,3 +7,6 @@ export * from './indoorModel';
 export * from './cadr';
 export * from './emissions';
 export * from './exposure';
+export * from './roomHazards';
+export * from './recovery';
+export * from './budgetFrontier';

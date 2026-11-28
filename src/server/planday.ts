@@ -22,6 +22,8 @@ Rules:
    - toggles.indoor: 'none' | 'seal_exhaust' | 'diy_box' | 'hepa'
    - toggles.households: 1 | 25 | 100 | 200 (default 25)
    - activityShiftHour: integer 6..22 or null
+   - customAiringHour: integer 6..22 if they mention a specific morning/daytime airing or walk hour, else null
+   - customCommuteHour: integer 5..22 if they mention a specific commute/school-drop hour, else null
 2. \`understoodAs\`: short confirmation summary of what you extracted (e.g. "Child at home · Gas stove (no exhaust) · Solo commute").
 3. \`gameplan.bullets\`: 2 to 3 concise, practical bullets tailored to their routine.
 4. NEVER invent percentages, ug/m3 values, or statistics. Prefer words ("cleanest afternoon window") over digits.
@@ -51,6 +53,8 @@ const PLANDAY_RESPONSE_SCHEMA = {
       required: ['travel', 'smartTiming', 'indoor', 'households'],
     },
     activityShiftHour: { type: Type.NUMBER, nullable: true },
+    customAiringHour: { type: Type.NUMBER, nullable: true },
+    customCommuteHour: { type: Type.NUMBER, nullable: true },
     gameplan: {
       type: Type.OBJECT,
       properties: {
@@ -191,16 +195,31 @@ export async function generatePlanDay(
 
         if (!rawText) continue;
 
-        const json: unknown = JSON.parse(rawText);
-        const parsed = PlanDayExtractedSchema.safeParse(json);
+        const rawJson = JSON.parse(rawText) as Record<string, unknown>;
+        if (rawJson && typeof rawJson === 'object') {
+          if (rawJson.customAiringHour === null) delete rawJson.customAiringHour;
+          if (rawJson.customCommuteHour === null) delete rawJson.customCommuteHour;
+        }
+        const parsed = PlanDayExtractedSchema.safeParse(rawJson);
         if (!parsed.success) continue;
 
         const bulletsSafe = parsed.data.gameplan.bullets.every((b) => guardNumbers(b, [], []));
         const understoodSafe = guardNumbers(parsed.data.understoodAs, userNumbers, []);
         if (!bulletsSafe || !understoodSafe) continue;
 
+        const customAiringHour = parsed.data.customAiringHour ?? parsed.data.toggles.customAiringHour;
+        const customCommuteHour =
+          parsed.data.customCommuteHour ?? parsed.data.toggles.customCommuteHour;
+
         return {
           ...parsed.data,
+          ...(customAiringHour !== undefined ? { customAiringHour } : {}),
+          ...(customCommuteHour !== undefined ? { customCommuteHour } : {}),
+          toggles: {
+            ...parsed.data.toggles,
+            ...(customAiringHour !== undefined ? { customAiringHour } : {}),
+            ...(customCommuteHour !== undefined ? { customCommuteHour } : {}),
+          },
           source: 'gemini',
         };
       } catch {
